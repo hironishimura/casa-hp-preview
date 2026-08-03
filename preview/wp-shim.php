@@ -303,7 +303,8 @@ function wp_nav_menu( $args ) {
 
 	echo '<ul class="' . esc_attr( $args['menu_class'] ) . '">';
 	foreach ( $items as $i ) {
-		echo '<li><a href="' . esc_url( $i[0] ) . '">' . esc_html( $i[1] ) . '</a></li>';
+		/* home_url() を通さないと、サブディレクトリ公開時にリンクが壊れる */
+		echo '<li><a href="' . esc_url( home_url( $i[0] ) ) . '">' . esc_html( $i[1] ) . '</a></li>';
 	}
 	echo '</ul>';
 }
