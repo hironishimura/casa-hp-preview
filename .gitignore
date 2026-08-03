@@ -1,0 +1,12 @@
+# Box からコピーした元データ（26GB・社外秘資料を含むため公開しない）
+casa_HP_data/
+
+# 配布用ZIP（大きいので必要なときに作り直す）
+*.zip
+
+# 旧・静的サイト（WordPressテーマに置き換え済み）
+1/
+
+# macOS
+.DS_Store
+**/.DS_Store

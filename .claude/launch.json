@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "casa-preview",
+      "runtimeExecutable": "/opt/homebrew/bin/php",
+      "runtimeArgs": ["-S", "127.0.0.1:8787", "-t", ".", "preview/router.php"],
+      "port": 8787
+    }
+  ]
+}
