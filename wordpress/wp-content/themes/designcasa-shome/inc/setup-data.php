@@ -466,9 +466,10 @@ function dcs_find_post( $slug, $post_type ) {
  * @param string $caption キャプション（写真コメント）。
  * @param string $alt     代替テキスト。
  * @param int    $parent  親投稿ID。
+ * @param string $key     重複判定に使うキー。同じ写真を別のキャプションで使う場合に指定する。
  * @return int 添付ID（失敗時0）。
  */
-function dcs_import_image( $rel, $caption, $alt, $parent = 0 ) {
+function dcs_import_image( $rel, $caption, $alt, $parent = 0, $key = '' ) {
 	require_once ABSPATH . 'wp-admin/includes/image.php';
 
 	$path = get_theme_file_path( $rel );
@@ -477,8 +478,9 @@ function dcs_import_image( $rel, $caption, $alt, $parent = 0 ) {
 	}
 
 	$filename = basename( $path );
+	$source   = $key ? $key : $filename;
 
-	/* すでに同名で取り込み済みなら再利用する */
+	/* すでに取り込み済みなら再利用する */
 	$existing = get_posts(
 		array(
 			'post_type'   => 'attachment',
@@ -488,7 +490,7 @@ function dcs_import_image( $rel, $caption, $alt, $parent = 0 ) {
 			'meta_query'  => array( // phpcs:ignore WordPress.DB.SlowDBQuery
 				array(
 					'key'     => '_dcs_source',
-					'value'   => $filename,
+					'value'   => $source,
 					'compare' => '=',
 				),
 			),
@@ -520,7 +522,7 @@ function dcs_import_image( $rel, $caption, $alt, $parent = 0 ) {
 	}
 
 	update_post_meta( $attach_id, '_wp_attachment_image_alt', $alt );
-	update_post_meta( $attach_id, '_dcs_source', $filename );
+	update_post_meta( $attach_id, '_dcs_source', $source );
 
 	$meta = wp_generate_attachment_metadata( $attach_id, $bits['file'] );
 	wp_update_attachment_metadata( $attach_id, $meta );
@@ -702,6 +704,26 @@ function dcs_import_spec( $s ) {
 	update_post_meta( $post_id, 'dcs_seo_desc', $s['seo_desc'] );
 
 	wp_set_object_terms( $post_id, array( $s['cat'] ), 'dc_spec_cat' );
+
+	/* 建材・製品の写真 */
+	$ids = array();
+	foreach ( ( isset( $s['images'] ) ? $s['images'] : array() ) as $i => $img ) {
+		$alt = sprintf( '%s｜宇都宮市の注文住宅の標準仕様', wp_strip_all_tags( $img['caption'] ) );
+		$id  = dcs_import_image(
+			'assets/img/' . $img['file'],
+			$img['caption'],
+			mb_substr( $alt, 0, 110 ),
+			$post_id,
+			'spec-' . $s['slug'] . '-' . $i . '-' . basename( $img['file'] )
+		);
+		if ( $id ) {
+			$ids[] = $id;
+			if ( 0 === $i ) {
+				set_post_thumbnail( $post_id, $id );
+			}
+		}
+	}
+	update_post_meta( $post_id, 'dcs_spec_gallery', implode( ',', $ids ) );
 }
 
 /**

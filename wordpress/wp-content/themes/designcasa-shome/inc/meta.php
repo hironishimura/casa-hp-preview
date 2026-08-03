@@ -46,9 +46,10 @@ function dcs_meta_fields() {
 		'dc_spec'      => array(
 			'title' => '仕様データ',
 			'fields' => array(
-				'dcs_spec_grade' => array( 'label' => '等級・数値', 'type' => 'text', 'help' => '例：耐震等級3／断熱等級6（UA値0.46以下）' ),
-				'dcs_spec_maker' => array( 'label' => '主な採用製品・メーカー', 'type' => 'textarea', 'help' => '1行につき1項目。' ),
-				'dcs_spec_lead'  => array( 'label' => 'リード文', 'type' => 'textarea' ),
+				'dcs_spec_grade'   => array( 'label' => '等級・数値', 'type' => 'text', 'help' => '例：耐震等級3／断熱等級6（UA値0.46以下）' ),
+				'dcs_spec_maker'   => array( 'label' => '主な採用製品・メーカー', 'type' => 'textarea', 'help' => '1行につき1項目。' ),
+				'dcs_spec_lead'    => array( 'label' => 'リード文', 'type' => 'textarea' ),
+				'dcs_spec_gallery' => array( 'label' => '建材・製品の写真', 'type' => 'gallery', 'help' => '各写真の説明はメディアの「キャプション」に入力してください。' ),
 			),
 		),
 	);
@@ -254,11 +255,12 @@ function dcs_meta( $key, $post_id = 0 ) {
 /**
  * ギャラリーの添付IDを配列で取得する。
  *
- * @param int $post_id 投稿ID。
+ * @param int    $post_id 投稿ID。
+ * @param string $key     メタキー。
  * @return int[]
  */
-function dcs_gallery_ids( $post_id = 0 ) {
-	$raw = dcs_meta( 'dcs_work_gallery', $post_id );
+function dcs_gallery_ids( $post_id = 0, $key = 'dcs_work_gallery' ) {
+	$raw = dcs_meta( $key, $post_id );
 
 	return array_filter( array_map( 'absint', explode( ',', $raw ) ) );
 }

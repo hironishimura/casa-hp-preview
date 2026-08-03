@@ -1242,3 +1242,43 @@ address{ font-style:normal; }
   .site-head,.mobilebar,.cta,.filter,.postnav,.gnav{ display:none !important; }
   body{ padding-bottom:0; background:#fff; }
 }
+
+/* =========================================================
+   家の仕様：建材・製品の写真
+   ========================================================= */
+.spec__hero img{ width:100%; height:clamp(220px,42vh,460px); object-fit:cover; display:block; }
+
+.sec--specgallery{
+  background:
+    repeating-linear-gradient(to right, rgba(16,20,24,.045) 0 1px, transparent 1px var(--grid)),
+    var(--paper-hi);
+}
+.matgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(26px,3.2vw,44px) clamp(18px,2.2vw,30px); }
+.matgrid__item{ margin:0; }
+.matgrid__item img{ width:100%; aspect-ratio:3/2; object-fit:cover; background:var(--stone); display:block; }
+.matgrid__cap{
+  margin-top:13px; padding-top:11px; border-top:1px solid var(--line);
+  font-size:12.5px; line-height:1.95; color:var(--text-mute);
+  display:grid; grid-template-columns:30px 1fr; gap:8px;
+}
+.matgrid__no{ font-family:var(--mono); font-size:10.5px; color:var(--lamp); padding-top:5px; }
+.matgrid__credit{
+  margin-top:34px; padding-top:18px; border-top:1px solid var(--line);
+  font-size:11.5px; line-height:1.9; color:var(--text-mute);
+}
+
+/* 仕様カードに写真が付く場合 */
+.speccard--img{ grid-template-columns:260px 300px 1fr; align-items:start; }
+.speccard__fig{ display:block; overflow:hidden; background:var(--stone); }
+.speccard__fig img{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; transition:transform .8s cubic-bezier(.16,.8,.3,1); }
+.speccard--img:hover .speccard__fig img{ transform:scale(1.05); }
+
+@media (max-width:1080px){
+  .matgrid{ grid-template-columns:repeat(2,1fr); }
+  .speccard--img{ grid-template-columns:1fr; }
+  .speccard__fig img{ aspect-ratio:16/9; }
+}
+@media (max-width:600px){
+  .matgrid{ grid-template-columns:1fr; }
+  .matgrid__cap{ grid-template-columns:26px 1fr; }
+}

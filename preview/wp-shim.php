@@ -86,11 +86,11 @@ function dcs_pv_post( $args ) {
 /**
  * 添付ファイルを作る。
  */
-function dcs_pv_att( $file, $caption, $alt, $dir = 'works' ) {
+function dcs_pv_att( $rel, $caption, $alt ) {
 	$id = $GLOBALS['dcs_next']++;
 	$GLOBALS['dcs_att'][ $id ] = (object) array(
 		'ID'      => $id,
-		'url'     => DCS_THEME_URI . '/assets/img/' . $dir . '/' . $file,
+		'url'     => DCS_THEME_URI . '/assets/img/' . ltrim( $rel, '/' ),
 		'caption' => $caption,
 		'alt'     => $alt,
 	);

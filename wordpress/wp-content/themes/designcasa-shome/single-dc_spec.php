@@ -13,11 +13,18 @@ dcs_breadcrumb();
 while ( have_posts() ) :
 	the_post();
 
-	$grade = dcs_meta( 'dcs_spec_grade' );
-	$maker = dcs_meta( 'dcs_spec_maker' );
-	$lead  = dcs_meta( 'dcs_spec_lead' );
-	$cat   = get_the_terms( get_the_ID(), 'dc_spec_cat' );
+	$grade   = dcs_meta( 'dcs_spec_grade' );
+	$maker   = dcs_meta( 'dcs_spec_maker' );
+	$lead    = dcs_meta( 'dcs_spec_lead' );
+	$cat     = get_the_terms( get_the_ID(), 'dc_spec_cat' );
+	$gallery = dcs_gallery_ids( 0, 'dcs_spec_gallery' );
 	?>
+
+	<?php if ( has_post_thumbnail() ) : ?>
+		<div class="spec__hero">
+			<?php the_post_thumbnail( 'dcs-wide', array( 'alt' => esc_attr( get_the_title() ), 'loading' => 'eager' ) ); ?>
+		</div>
+	<?php endif; ?>
 
 	<section class="phero">
 		<div class="wrap">
@@ -83,6 +90,40 @@ while ( have_posts() ) :
 			</div>
 		</div>
 	</section>
+
+	<?php if ( $gallery ) : ?>
+		<section class="sec sec--specgallery">
+			<div class="wrap">
+				<div class="sec-head">
+					<p class="sec-head__eyebrow"><span class="tick" aria-hidden="true"></span>MATERIAL &amp; DETAIL</p>
+					<h2 class="sec-head__title">写真で見る、この仕様</h2>
+					<p class="sec-head__note">実際の建材・製品と、それが使われている場面です。<?php echo esc_html( count( $gallery ) ); ?>枚。</p>
+				</div>
+				<div class="matgrid">
+					<?php foreach ( $gallery as $i => $att_id ) : ?>
+						<figure class="matgrid__item reveal">
+							<?php
+							echo wp_get_attachment_image(
+								$att_id,
+								'dcs-card',
+								false,
+								array(
+									'loading' => $i < 2 ? 'eager' : 'lazy',
+									'alt'     => esc_attr( get_post_meta( $att_id, '_wp_attachment_image_alt', true ) ),
+								)
+							);
+							?>
+							<figcaption class="matgrid__cap">
+								<span class="matgrid__no"><?php echo esc_html( sprintf( '%02d', $i + 1 ) ); ?></span>
+								<?php echo esc_html( wp_get_attachment_caption( $att_id ) ); ?>
+							</figcaption>
+						</figure>
+					<?php endforeach; ?>
+				</div>
+				<p class="matgrid__credit">写真：design casa 施工実例／各メーカー提供素材。仕様は予告なく変更になる場合があります。</p>
+			</div>
+		</section>
+	<?php endif; ?>
 
 	<?php
 endwhile;

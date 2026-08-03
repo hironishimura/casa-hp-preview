@@ -63,7 +63,12 @@ dcs_breadcrumb();
 					$grade = dcs_meta( 'dcs_spec_grade' );
 					$maker = dcs_meta( 'dcs_spec_maker' );
 					?>
-					<article class="speccard">
+					<article class="speccard<?php echo has_post_thumbnail() ? ' speccard--img' : ''; ?>">
+						<?php if ( has_post_thumbnail() ) : ?>
+							<a class="speccard__fig" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
+								<?php the_post_thumbnail( 'dcs-card', array( 'alt' => '' ) ); ?>
+							</a>
+						<?php endif; ?>
 						<div class="speccard__head">
 							<?php if ( $cat && ! is_wp_error( $cat ) ) : ?>
 								<p class="speccard__cat"><?php echo esc_html( $cat[0]->name ); ?></p>

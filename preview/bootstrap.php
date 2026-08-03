@@ -23,6 +23,12 @@ foreach ( dcs_page_defs() as $slug => $def ) {
 foreach ( dcs_load_data( 'specs' ) as $i => $s ) {
 	$term = dcs_pv_term( 'dc_spec_cat', $s['cat'] );
 	$term->count++;
+
+	$ids = array();
+	foreach ( ( isset( $s['images'] ) ? $s['images'] : array() ) as $img ) {
+		$ids[] = dcs_pv_att( $img['file'], $img['caption'], mb_substr( $img['caption'], 0, 110 ) );
+	}
+
 	dcs_pv_post(
 		array(
 			'post_title'   => $s['title'],
@@ -31,12 +37,14 @@ foreach ( dcs_load_data( 'specs' ) as $i => $s ) {
 			'post_excerpt' => $s['lead'],
 			'post_content' => dcs_markdownish( $s['body'] ),
 			'menu_order'   => $i,
+			'thumb'        => $ids ? $ids[0] : 0,
 			'meta'         => array(
-				'dcs_spec_grade' => $s['grade'],
-				'dcs_spec_maker' => $s['maker'],
-				'dcs_spec_lead'  => $s['lead'],
-				'dcs_seo_title'  => $s['seo_title'],
-				'dcs_seo_desc'   => $s['seo_desc'],
+				'dcs_spec_grade'   => $s['grade'],
+				'dcs_spec_maker'   => $s['maker'],
+				'dcs_spec_lead'    => $s['lead'],
+				'dcs_seo_title'    => $s['seo_title'],
+				'dcs_seo_desc'     => $s['seo_desc'],
+				'dcs_spec_gallery' => implode( ',', $ids ),
 			),
 			'terms'        => array( $term ),
 		)
@@ -52,7 +60,7 @@ foreach ( dcs_load_data( 'architects' ) as $i => $a ) {
 	}
 	$thumb = 0;
 	if ( ! empty( $a['image'] ) ) {
-		$thumb = dcs_pv_att( $a['image'], '', $a['name'] . '（' . $a['office'] . '）｜design casa 登録建築家', 'architect' );
+		$thumb = dcs_pv_att( 'architect/' . $a['image'], '', $a['name'] . '（' . $a['office'] . '）｜design casa 登録建築家' );
 	}
 	dcs_pv_post(
 		array(
@@ -86,7 +94,7 @@ foreach ( dcs_load_data( 'works' ) as $w ) {
 	$alt = sprintf( '%s｜%sの注文住宅 施工例（%s）', $w['title'], $w['pref'], $w['type'] );
 	$ids = array();
 	foreach ( $w['gallery'] as $g ) {
-		$ids[] = dcs_pv_att( $g['file'], $g['caption'], $alt );
+		$ids[] = dcs_pv_att( 'works/' . $g['file'], $g['caption'], $alt );
 	}
 	dcs_pv_post(
 		array(
