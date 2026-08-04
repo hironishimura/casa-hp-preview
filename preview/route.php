@@ -38,9 +38,10 @@ function dcs_render_path( $path ) {
 	$status = 200;
 
 	if ( ! $seg ) {
+		$home = get_page_by_path( 'home' );
 		$GLOBALS['dcs_ctx'] = array( 'type' => 'front' );
-		dcs_set_main( array() );
-		$tpl = 'front-page.php';
+		dcs_set_main( $home ? array( $home ) : array() );
+		$tpl = 'page.php';
 
 	} elseif ( 'works' === $seg[0] ) {
 

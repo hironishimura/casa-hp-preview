@@ -17,7 +17,6 @@ while ( have_posts() ) :
 	$kana   = dcs_meta( 'dcs_arch_kana' );
 	$base   = dcs_meta( 'dcs_arch_base' );
 	$policy = dcs_meta( 'dcs_arch_policy' );
-	$career = dcs_meta( 'dcs_arch_career' );
 	$url    = dcs_meta( 'dcs_arch_url' );
 	?>
 
@@ -38,12 +37,6 @@ while ( have_posts() ) :
 					<?php if ( has_post_thumbnail() ) : ?>
 						<?php the_post_thumbnail( 'dcs-card', array( 'alt' => esc_attr( get_the_title() . '｜' . $office ) ) ); ?>
 					<?php endif; ?>
-					<?php if ( $career ) : ?>
-						<div class="archdetail__career">
-							<h2>経歴</h2>
-							<p><?php echo nl2br( esc_html( $career ) ); ?></p>
-						</div>
-					<?php endif; ?>
 					<?php if ( $url ) : ?>
 						<p class="archdetail__url"><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer">事務所サイトを見る</a></p>
 					<?php endif; ?>
@@ -53,7 +46,7 @@ while ( have_posts() ) :
 					<?php if ( $policy ) : ?>
 						<p class="archdetail__policy"><?php echo esc_html( $policy ); ?></p>
 					<?php endif; ?>
-					<div class="prose">
+					<div class="entry-content">
 						<?php the_content(); ?>
 					</div>
 

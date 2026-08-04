@@ -43,26 +43,52 @@ function dcs_setup_permalinks() {
  */
 function dcs_page_defs() {
 	return array(
+		'home'    => array(
+			'title'    => 'ホーム',
+			'template' => '',
+			'blocks'   => 'dcs_page_home_blocks',
+			'front'    => true,
+		),
 		'concept' => array(
 			'title'    => 'デザインカーサとは',
-			'template' => 'page-concept.php',
+			'template' => '',
+			'blocks'   => 'dcs_page_concept_blocks',
 		),
 		'flow'    => array(
 			'title'    => '家づくりの流れ',
-			'template' => 'page-flow.php',
+			'template' => '',
+			'blocks'   => 'dcs_page_flow_blocks',
 		),
 		'company' => array(
 			'title'    => '施工会社紹介',
-			'template' => 'page-company.php',
+			'template' => '',
+			'blocks'   => 'dcs_page_company_blocks',
 		),
 		'contact' => array(
 			'title'    => '資料請求・お問い合わせ',
-			'template' => 'page-contact.php',
+			'template' => '',
+			'blocks'   => 'dcs_page_contact_blocks',
 		),
 		'privacy' => array(
 			'title'    => 'プライバシーポリシー',
-			'template' => 'page-privacy.php',
+			'template' => '',
+			'blocks'   => 'dcs_page_privacy_blocks',
 		),
+	);
+}
+
+/**
+ * 各ページのリード文（見出し下の説明）。
+ *
+ * @return array
+ */
+function dcs_page_leads() {
+	return array(
+		'concept' => '一生暮らしたいデザインの家を、建築家・工務店・あなたの3者でつくる。まったく新しい「建築家とつくる家」のかたちです。宇都宮市・栃木県では、株式会社エスホームが design casa 加盟工務店としてお手伝いします。',
+		'flow'    => '最初のご相談から、お引き渡しまで全14ステップ。宇都宮市で注文住宅を建てるとき、どの順番で何が決まっていくのかを、あらかじめ知っておいてください。',
+		'company' => 'design casa 宇都宮の家をつくるのは、宇都宮市平出町の工務店・株式会社エスホームです。設計から施工、引き渡し後の点検まで、地元の会社が一貫して責任を持ちます。',
+		'contact' => 'まだ具体的でなくてかまいません。「宇都宮市で工務店を探しはじめたところ」「予算がいくら必要なのか知りたい」。その段階のご相談がいちばん多く、いちばんお役に立てる段階です。しつこい営業は一切いたしません。',
+		'privacy' => '株式会社エスホームは、お客さまの個人情報の保護を重要な責務と考え、以下の方針にもとづき適切に取り扱います。',
 	);
 }
 
@@ -70,28 +96,46 @@ function dcs_page_defs() {
  * 固定ページを作成する。
  */
 function dcs_setup_pages() {
+	$leads = dcs_page_leads();
+
 	foreach ( dcs_page_defs() as $slug => $def ) {
-		$existing = get_page_by_path( $slug );
-		if ( $existing ) {
-			update_post_meta( $existing->ID, '_wp_page_template', $def['template'] );
-			continue;
+		$page = get_page_by_path( $slug );
+
+		if ( ! $page ) {
+			$id = wp_insert_post(
+				array(
+					'post_title'   => $def['title'],
+					'post_name'    => $slug,
+					'post_type'    => 'page',
+					'post_status'  => 'publish',
+					'post_content' => '',
+					'post_excerpt' => isset( $leads[ $slug ] ) ? $leads[ $slug ] : '',
+				)
+			);
+			if ( ! $id || is_wp_error( $id ) ) {
+				continue;
+			}
+		} else {
+			$id = $page->ID;
 		}
 
-		$id = wp_insert_post(
-			array(
-				'post_title'   => $def['title'],
-				'post_name'    => $slug,
-				'post_type'    => 'page',
-				'post_status'  => 'publish',
-				'post_content' => '',
-			)
-		);
-
-		if ( $id && ! is_wp_error( $id ) ) {
+		if ( ! empty( $def['template'] ) ) {
 			update_post_meta( $id, '_wp_page_template', $def['template'] );
-			if ( 'privacy' === $slug ) {
-				update_option( 'wp_page_for_privacy_policy', $id );
-			}
+		}
+		if ( 'privacy' === $slug ) {
+			update_option( 'wp_page_for_privacy_policy', $id );
+		}
+		if ( ! empty( $def['front'] ) ) {
+			update_option( 'show_on_front', 'page' );
+			update_option( 'page_on_front', $id );
+		}
+	}
+
+	/* 初期状態の「サンプルページ」「Hello world!」はゴミ箱へ */
+	foreach ( array( 'sample-page', 'hello-world' ) as $s ) {
+		$p = get_page_by_path( $s, OBJECT, array( 'page', 'post' ) );
+		if ( $p && 'trash' !== $p->post_status ) {
+			wp_trash_post( $p->ID );
 		}
 	}
 }
@@ -245,7 +289,62 @@ function dcs_import_queue() {
 		);
 	}
 
+	/* 固定ページの本文（ブロック）は、写真の取り込み後に入れる */
+	foreach ( dcs_page_defs() as $slug => $def ) {
+		if ( ! empty( $def['blocks'] ) ) {
+			$queue[] = array(
+				'type'  => 'page',
+				'index' => $slug,
+				'label' => 'ページ：' . $def['title'],
+			);
+		}
+	}
+
 	return $queue;
+}
+
+/**
+ * テーマ共通画像（assets/img/common/）を取り込む。
+ *
+ * @param string $file ファイル名。
+ * @param string $alt  代替テキスト。
+ * @return int 添付ID。
+ */
+function dcs_import_common( $file, $alt = '' ) {
+	if ( function_exists( 'dcs_pv_att' ) ) {
+		/* 確認用プレビューでは、その場で疑似的な添付をつくる */
+		return dcs_pv_att( 'common/' . $file, '', $alt );
+	}
+
+	return dcs_import_image( 'assets/img/common/' . $file, '', $alt, 0, 'common-' . $file );
+}
+
+/**
+ * 固定ページの本文（ブロック）を入れる。
+ *
+ * @param string $slug スラッグ。
+ */
+function dcs_import_page_content( $slug ) {
+	$defs = dcs_page_defs();
+	if ( empty( $defs[ $slug ]['blocks'] ) ) {
+		return;
+	}
+	$page = get_page_by_path( $slug );
+	if ( ! $page ) {
+		return;
+	}
+
+	$fn = $defs[ $slug ]['blocks'];
+	if ( ! function_exists( $fn ) ) {
+		return;
+	}
+
+	wp_update_post(
+		array(
+			'ID'           => $page->ID,
+			'post_content' => call_user_func( $fn ),
+		)
+	);
 }
 
 /**
@@ -404,6 +503,9 @@ function dcs_ajax_import_step() {
 		case 'work':
 			dcs_import_work( dcs_load_data( 'works' )[ $job['index'] ] );
 			break;
+		case 'page':
+			dcs_import_page_content( $job['index'] );
+			break;
 	}
 
 	$pos++;
@@ -472,13 +574,28 @@ function dcs_find_post( $slug, $post_type ) {
 function dcs_import_image( $rel, $caption, $alt, $parent = 0, $key = '' ) {
 	require_once ABSPATH . 'wp-admin/includes/image.php';
 
-	$path = get_theme_file_path( $rel );
-	if ( ! file_exists( $path ) ) {
-		return 0;
-	}
-
-	$filename = basename( $path );
+	$path     = get_theme_file_path( $rel );
+	$filename = basename( $rel );
 	$source   = $key ? $key : $filename;
+	$bytes    = null;
+
+	if ( ! file_exists( $path ) ) {
+		/* テーマに同梱されていない場合は、配布元から取得する */
+		if ( ! DCS_REMOTE_ASSETS ) {
+			return 0;
+		}
+		$res = wp_remote_get(
+			rtrim( DCS_REMOTE_ASSETS, '/' ) . '/' . ltrim( $rel, '/' ),
+			array( 'timeout' => 30 )
+		);
+		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			return 0;
+		}
+		$bytes = wp_remote_retrieve_body( $res );
+		if ( ! $bytes ) {
+			return 0;
+		}
+	}
 
 	/* すでに取り込み済みなら再利用する */
 	$existing = get_posts(
@@ -500,7 +617,11 @@ function dcs_import_image( $rel, $caption, $alt, $parent = 0, $key = '' ) {
 		return (int) $existing[0];
 	}
 
-	$bits = wp_upload_bits( $filename, null, file_get_contents( $path ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	if ( null === $bytes ) {
+		$bytes = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	}
+
+	$bits = wp_upload_bits( $filename, null, $bytes );
 	if ( ! empty( $bits['error'] ) ) {
 		return 0;
 	}
@@ -545,15 +666,12 @@ function dcs_import_work( $w ) {
 		$w['catch']
 	);
 
-	$content = dcs_work_content( $w );
-
 	$args = array(
 		'post_type'    => 'dc_work',
 		'post_status'  => 'publish',
 		'post_title'   => $w['title'],
 		'post_name'    => $w['slug'],
 		'post_excerpt' => $excerpt,
-		'post_content' => $content,
 		'menu_order'   => (int) $w['no'],
 	);
 
@@ -583,35 +701,58 @@ function dcs_import_work( $w ) {
 		$alt = sprintf( '%s｜%sの注文住宅 施工例（%s）', $w['title'], $w['pref'], $w['type'] );
 		$id  = dcs_import_image( 'assets/img/works/' . $g['file'], $g['caption'], $alt, $post_id );
 		if ( $id ) {
-			$ids[] = $id;
+			$ids[ $i ] = $id;
 			if ( 0 === $i ) {
 				set_post_thumbnail( $post_id, $id );
 			}
 		}
 	}
 	update_post_meta( $post_id, 'dcs_work_gallery', implode( ',', $ids ) );
+
+	/* 本文をブロックで組み立てる（写真の取り込み後に行う） */
+	wp_update_post(
+		array(
+			'ID'           => $post_id,
+			'post_content' => dcs_work_blocks( $w, $ids ),
+		)
+	);
 }
 
 /**
- * 施工例の本文をつくる。
+ * 施工例の本文（ブロック）をつくる。
  *
- * @param array $w データ。
+ * @param array $w   データ。
+ * @param array $ids 添付ID（ギャラリー順）。
  * @return string
  */
-function dcs_work_content( $w ) {
-	$tags = implode( '・', $w['tags'] );
+function dcs_work_blocks( $w, $ids ) {
+	$b = array();
 
-	$p = array();
-	$p[] = sprintf( '<p>%s</p>', esc_html( $w['catch'] ) );
-	$p[] = sprintf(
-		'<p>%s に建つ、%s の住まいです。%s といった要素を、敷地の条件と暮らし方に合わせて組み立てました。design casa に登録する建築家が、規格プランの当てはめではなく一邸ずつ設計しています。</p>',
-		esc_html( $w['pref'] ),
-		esc_html( $w['type'] ),
-		esc_html( $tags )
+	$b[] = dcs_b_paragraph( esc_html( $w['catch'] ), 'work__catch' );
+	$b[] = dcs_b_paragraph(
+		sprintf(
+			'%s に建つ、%s の住まいです。%s といった要素を、敷地の条件と暮らし方に合わせて組み立てました。design casa に登録する建築家が、規格プランの当てはめではなく一邸ずつ設計しています。',
+			esc_html( $w['pref'] ),
+			esc_html( $w['type'] ),
+			esc_html( implode( '・', $w['tags'] ) )
+		)
 	);
-	$p[] = '<p>宇都宮市・栃木県で同じような家を建てたい方は、株式会社エスホームへご相談ください。耐震等級3・断熱等級6を標準仕様とし、この施工例のようなデザインを、栃木の気候に合わせた性能でご提供します。</p>';
 
-	return implode( "\n\n", $p );
+	if ( $ids ) {
+		$b[] = dcs_b_heading( 2, '写真で見る、設計の意図' );
+		$b[] = dcs_b_paragraph( '1枚ごとに、なぜそう設計したのかを添えています。' );
+		foreach ( $w['gallery'] as $i => $g ) {
+			if ( isset( $ids[ $i ] ) ) {
+				$b[] = dcs_b_image( $ids[ $i ], $g['caption'], 'large' );
+			}
+		}
+	}
+
+	$b[] = dcs_b_heading( 2, 'この家のような住まいを、宇都宮市で。' );
+	$b[] = dcs_b_paragraph( 'こちらは design casa 加盟工務店による施工実例です。同じ建築家ネットワークを使い、株式会社エスホームが宇都宮市・栃木県で設計・施工いたします。耐震等級3・断熱等級6を標準仕様としているため、デザインを損なわずに冬あたたかく夏すずしい家になります。' );
+	$b[] = dcs_b_button( 'この家について相談する（無料）', home_url( '/contact/' ) );
+
+	return dcs_b_join( $b );
 }
 
 /**
@@ -622,12 +763,16 @@ function dcs_work_content( $w ) {
 function dcs_import_architect( $a ) {
 	$post_id = dcs_find_post( $a['slug'], 'dc_architect' );
 
-	$content = '';
+	$blocks = array();
 	foreach ( explode( "\n\n", $a['body'] ) as $para ) {
 		$para = trim( $para );
 		if ( $para ) {
-			$content .= '<p>' . esc_html( $para ) . "</p>\n\n";
+			$blocks[] = dcs_b_paragraph( esc_html( $para ) );
 		}
+	}
+	if ( ! empty( $a['career'] ) ) {
+		$blocks[] = dcs_b_heading( 2, '経歴' );
+		$blocks[] = dcs_b_paragraph( nl2br( esc_html( $a['career'] ) ) );
 	}
 
 	$args = array(
@@ -636,7 +781,7 @@ function dcs_import_architect( $a ) {
 		'post_title'   => $a['name'],
 		'post_name'    => $a['slug'],
 		'post_excerpt' => $a['policy'] ? $a['policy'] : $a['office'],
-		'post_content' => trim( $content ),
+		'post_content' => dcs_b_join( $blocks ),
 	);
 
 	if ( $post_id ) {
@@ -683,7 +828,7 @@ function dcs_import_spec( $s ) {
 		'post_title'   => $s['title'],
 		'post_name'    => $s['slug'],
 		'post_excerpt' => $s['lead'],
-		'post_content' => dcs_markdownish( $s['body'] ),
+		'post_content' => dcs_markdown_to_blocks( $s['body'] ),
 	);
 
 	if ( $post_id ) {
@@ -724,6 +869,24 @@ function dcs_import_spec( $s ) {
 		}
 	}
 	update_post_meta( $post_id, 'dcs_spec_gallery', implode( ',', $ids ) );
+
+	/* 本文＋建材写真をブロックで組み立て直す */
+	$blocks = array( dcs_markdown_to_blocks( $s['body'] ) );
+	if ( $ids ) {
+		$blocks[] = dcs_b_heading( 2, '写真で見る、この仕様' );
+		$blocks[] = dcs_b_paragraph( '実際の建材・製品と、それが使われている場面です。' );
+		foreach ( $ids as $n => $id ) {
+			$cap = isset( $s['images'][ $n ]['caption'] ) ? $s['images'][ $n ]['caption'] : '';
+			$blocks[] = dcs_b_image( $id, $cap, 'large' );
+		}
+		$blocks[] = dcs_b_paragraph( '写真：design casa 施工実例／各メーカー提供素材。仕様は予告なく変更になる場合があります。', 'matgrid__credit' );
+	}
+	wp_update_post(
+		array(
+			'ID'           => $post_id,
+			'post_content' => dcs_b_join( $blocks ),
+		)
+	);
 }
 
 /**

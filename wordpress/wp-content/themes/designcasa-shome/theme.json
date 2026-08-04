@@ -1,0 +1,85 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/theme.json",
+	"version": 2,
+	"settings": {
+		"appearanceTools": true,
+		"layout": {
+			"contentSize": "1180px",
+			"wideSize": "1440px"
+		},
+		"color": {
+			"defaultPalette": false,
+			"defaultGradients": false,
+			"custom": true,
+			"palette": [
+				{ "slug": "ink",    "color": "#101418", "name": "焼杉の黒" },
+				{ "slug": "paper",  "color": "#E8EAE3", "name": "大谷石のグレージュ" },
+				{ "slug": "paper-hi", "color": "#F3F4EF", "name": "明るい面" },
+				{ "slug": "stone",  "color": "#C6C7BC", "name": "石の陰" },
+				{ "slug": "lamp",   "color": "#E0A24B", "name": "夜の家の灯り" },
+				{ "slug": "text",   "color": "#1A1F24", "name": "本文" },
+				{ "slug": "text-mute", "color": "#5C6470", "name": "補足文字" }
+			]
+		},
+		"typography": {
+			"customFontSize": true,
+			"lineHeight": true,
+			"fontFamilies": [
+				{
+					"slug": "mincho",
+					"name": "明朝（見出し）",
+					"fontFamily": "\"Zen Old Mincho\", \"Yu Mincho\", \"YuMincho\", \"Hiragino Mincho ProN\", serif"
+				},
+				{
+					"slug": "gothic",
+					"name": "ゴシック（本文）",
+					"fontFamily": "\"Zen Kaku Gothic New\", \"Hiragino Sans\", \"Noto Sans JP\", sans-serif"
+				},
+				{
+					"slug": "mono",
+					"name": "等幅（数値）",
+					"fontFamily": "\"IBM Plex Mono\", ui-monospace, \"SFMono-Regular\", monospace"
+				}
+			],
+			"fontSizes": [
+				{ "slug": "small",  "size": "13px",                       "name": "小" },
+				{ "slug": "medium", "size": "15px",                       "name": "標準" },
+				{ "slug": "large",  "size": "clamp(18px,2.2vw,22px)",     "name": "大" },
+				{ "slug": "x-large","size": "clamp(24px,3.6vw,40px)",     "name": "特大" }
+			]
+		},
+		"spacing": {
+			"units": [ "px", "%", "rem", "vw" ],
+			"padding": true,
+			"margin": true
+		}
+	},
+	"styles": {
+		"color": {
+			"background": "var(--wp--preset--color--paper)",
+			"text": "var(--wp--preset--color--text)"
+		},
+		"typography": {
+			"fontFamily": "var(--wp--preset--font-family--gothic)",
+			"fontSize": "16px",
+			"lineHeight": "2"
+		},
+		"elements": {
+			"link": {
+				"color": { "text": "var(--wp--preset--color--text)" }
+			},
+			"h1": { "typography": { "fontFamily": "var(--wp--preset--font-family--mincho)", "fontWeight": "600", "lineHeight": "1.4" } },
+			"h2": { "typography": { "fontFamily": "var(--wp--preset--font-family--mincho)", "fontWeight": "600", "lineHeight": "1.55" } },
+			"h3": { "typography": { "fontFamily": "var(--wp--preset--font-family--mincho)", "fontWeight": "600", "lineHeight": "1.7" } },
+			"button": {
+				"color": {
+					"background": "var(--wp--preset--color--lamp)",
+					"text": "var(--wp--preset--color--ink)"
+				},
+				"border": { "radius": "0px" },
+				"typography": { "fontSize": "14px" },
+				"spacing": { "padding": { "top": "16px", "bottom": "16px", "left": "28px", "right": "28px" } }
+			}
+		}
+	}
+}

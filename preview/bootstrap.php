@@ -8,13 +8,16 @@
 require __DIR__ . '/wp-shim.php';
 require DCS_THEME_DIR . '/functions.php';
 
-/* --- 固定ページ --- */
+/* --- 固定ページ（本文はブロックで生成） --- */
+$dcs_leads = dcs_page_leads();
+$dcs_pages = array();
 foreach ( dcs_page_defs() as $slug => $def ) {
-	dcs_pv_post(
+	$dcs_pages[ $slug ] = dcs_pv_post(
 		array(
-			'post_title' => $def['title'],
-			'post_name'  => $slug,
-			'post_type'  => 'page',
+			'post_title'   => $def['title'],
+			'post_name'    => $slug,
+			'post_type'    => 'page',
+			'post_excerpt' => isset( $dcs_leads[ $slug ] ) ? $dcs_leads[ $slug ] : '',
 		)
 	);
 }
@@ -29,13 +32,23 @@ foreach ( dcs_load_data( 'specs' ) as $i => $s ) {
 		$ids[] = dcs_pv_att( $img['file'], $img['caption'], mb_substr( $img['caption'], 0, 110 ) );
 	}
 
+	$blocks = array( dcs_markdown_to_blocks( $s['body'] ) );
+	if ( $ids ) {
+		$blocks[] = dcs_b_heading( 2, '写真で見る、この仕様' );
+		$blocks[] = dcs_b_paragraph( '実際の建材・製品と、それが使われている場面です。' );
+		foreach ( $ids as $n => $id ) {
+			$blocks[] = dcs_b_image( $id, $s['images'][ $n ]['caption'], 'large' );
+		}
+		$blocks[] = dcs_b_paragraph( '写真：design casa 施工実例／各メーカー提供素材。仕様は予告なく変更になる場合があります。', 'matgrid__credit' );
+	}
+
 	dcs_pv_post(
 		array(
 			'post_title'   => $s['title'],
 			'post_name'    => $s['slug'],
 			'post_type'    => 'dc_spec',
 			'post_excerpt' => $s['lead'],
-			'post_content' => dcs_markdownish( $s['body'] ),
+			'post_content' => dcs_b_join( $blocks ),
 			'menu_order'   => $i,
 			'thumb'        => $ids ? $ids[0] : 0,
 			'meta'         => array(
@@ -53,11 +66,16 @@ foreach ( dcs_load_data( 'specs' ) as $i => $s ) {
 
 /* --- 建築家 --- */
 foreach ( dcs_load_data( 'architects' ) as $i => $a ) {
-	$content = '';
+	$blocks = array();
 	foreach ( explode( "\n\n", $a['body'] ) as $para ) {
 		$para = trim( $para );
-		if ( $para ) { $content .= '<p>' . esc_html( $para ) . "</p>\n"; }
+		if ( $para ) { $blocks[] = dcs_b_paragraph( esc_html( $para ) ); }
 	}
+	if ( ! empty( $a['career'] ) ) {
+		$blocks[] = dcs_b_heading( 2, '経歴' );
+		$blocks[] = dcs_b_paragraph( nl2br( esc_html( $a['career'] ) ) );
+	}
+	$content = dcs_b_join( $blocks );
 	$thumb = 0;
 	if ( ! empty( $a['image'] ) ) {
 		$thumb = dcs_pv_att( 'architect/' . $a['image'], '', $a['name'] . '（' . $a['office'] . '）｜design casa 登録建築家' );
@@ -96,13 +114,12 @@ foreach ( dcs_load_data( 'works' ) as $w ) {
 	foreach ( $w['gallery'] as $g ) {
 		$ids[] = dcs_pv_att( 'works/' . $g['file'], $g['caption'], $alt );
 	}
-	dcs_pv_post(
+	$post = dcs_pv_post(
 		array(
 			'post_title'   => $w['title'],
 			'post_name'    => $w['slug'],
 			'post_type'    => 'dc_work',
 			'post_excerpt' => sprintf( '%sで design casa の建築家が設計した%s。%s', $w['pref'], $w['type'], $w['catch'] ),
-			'post_content' => dcs_work_content( $w ),
 			'menu_order'   => (int) $w['no'],
 			'thumb'        => $ids ? $ids[0] : 0,
 			'terms'        => $terms,
@@ -115,6 +132,14 @@ foreach ( dcs_load_data( 'works' ) as $w ) {
 			),
 		)
 	);
+	$post->post_content = dcs_work_blocks( $w, $ids );
+}
+
+/* --- 固定ページの本文（写真の取り込み後に生成する） --- */
+foreach ( dcs_page_defs() as $slug => $def ) {
+	if ( ! empty( $def['blocks'] ) && function_exists( $def['blocks'] ) && isset( $dcs_pages[ $slug ] ) ) {
+		$dcs_pages[ $slug ]->post_content = call_user_func( $def['blocks'] );
+	}
 }
 
 require __DIR__ . '/route.php';

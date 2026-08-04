@@ -10,7 +10,17 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DCS_VERSION', '1.0.0' );
+define( 'DCS_VERSION', '1.1.0' );
+
+/**
+ * 画像をテーマに同梱しない場合の取得元。
+ *
+ * テーマZIPを軽くするため、初期データの写真はここから取り込みます。
+ * テーマ内に assets/img/ がある場合は、そちらが優先されます。
+ */
+if ( ! defined( 'DCS_REMOTE_ASSETS' ) ) {
+	define( 'DCS_REMOTE_ASSETS', 'https://hironishimura.github.io/casa-hp-preview/theme' );
+}
 
 require_once get_theme_file_path( 'inc/config.php' );
 require_once get_theme_file_path( 'inc/cpt.php' );
@@ -18,6 +28,8 @@ require_once get_theme_file_path( 'inc/meta.php' );
 require_once get_theme_file_path( 'inc/breadcrumb.php' );
 require_once get_theme_file_path( 'inc/seo.php' );
 require_once get_theme_file_path( 'inc/content.php' );
+require_once get_theme_file_path( 'inc/blocks.php' );
+require_once get_theme_file_path( 'inc/page-content.php' );
 require_once get_theme_file_path( 'inc/contact-form.php' );
 require_once get_theme_file_path( 'inc/customizer.php' );
 require_once get_theme_file_path( 'inc/setup-data.php' );

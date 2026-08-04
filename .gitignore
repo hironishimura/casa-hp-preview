@@ -1,8 +1,22 @@
+# 接続情報（絶対にコミットしないこと）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
 # Box からコピーした元データ（26GB・社外秘資料を含むため公開しない）
 casa_HP_data/
 
+# iCloudの競合コピー
+*[0-9].html
+* [0-9].css
+* [0-9].txt
+
 # 配布用ZIP（大きいので必要なときに作り直す）
 *.zip
+# ただし wp-admin からアップロードする軽量版だけは配布する
+!designcasa-shome-lite.zip
 
 # 旧・静的サイト（WordPressテーマに置き換え済み）
 1/

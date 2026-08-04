@@ -395,7 +395,37 @@ function get_post_type( $p = null ) { $p = get_post( $p ); return $p ? $p->post_
 function get_the_title( $p = null ) { $p = get_post( $p ); return $p ? $p->post_title : ''; }
 function the_title() { echo esc_html( get_the_title() ); }
 function get_the_content() { $p = get_post(); return $p ? $p->post_content : ''; }
-function the_content() { echo get_the_content(); } // phpcs:ignore
+function the_content() { echo do_shortcode( get_the_content() ); } // phpcs:ignore
+
+/* ---------- ショートコード ---------- */
+$GLOBALS['dcs_shortcodes'] = array();
+function add_shortcode( $tag, $cb ) { $GLOBALS['dcs_shortcodes'][ $tag ] = $cb; }
+function shortcode_atts( $pairs, $atts ) {
+	$atts = (array) $atts;
+	$out  = array();
+	foreach ( $pairs as $k => $v ) {
+		$out[ $k ] = array_key_exists( $k, $atts ) ? $atts[ $k ] : $v;
+	}
+
+	return $out;
+}
+function do_shortcode( $content ) {
+	if ( ! $GLOBALS['dcs_shortcodes'] ) { return $content; }
+	$tags = implode( '|', array_map( 'preg_quote', array_keys( $GLOBALS['dcs_shortcodes'] ) ) );
+
+	return preg_replace_callback(
+		'/\[(' . $tags . ')([^\]]*)\]/',
+		function ( $m ) {
+			$atts = array();
+			if ( preg_match_all( '/(\w+)\s*=\s*"([^"]*)"/', $m[2], $mm, PREG_SET_ORDER ) ) {
+				foreach ( $mm as $a ) { $atts[ $a[1] ] = $a[2]; }
+			}
+
+			return (string) call_user_func( $GLOBALS['dcs_shortcodes'][ $m[1] ], $atts );
+		},
+		$content
+	);
+}
 function the_permalink() { echo esc_url( get_permalink() ); }
 function has_excerpt( $p = null ) { $p = get_post( $p ); return $p && '' !== $p->post_excerpt; }
 function get_the_excerpt( $p = null ) { $p = get_post( $p ); return $p ? $p->post_excerpt : ''; }
@@ -484,6 +514,11 @@ function wp_get_attachment_image_src( $id, $size = 'full' ) {
 
 	return array( $GLOBALS['dcs_att'][ $id ]->url, $w, $h );
 }
+function wp_get_attachment_image_url( $id, $size = 'full' ) {
+	$s = wp_get_attachment_image_src( $id, $size );
+
+	return $s ? $s[0] : '';
+}
 function wp_get_attachment_caption( $id ) {
 	return isset( $GLOBALS['dcs_att'][ $id ] ) ? $GLOBALS['dcs_att'][ $id ]->caption : '';
 }
@@ -502,6 +537,7 @@ function get_the_post_thumbnail_url( $p = null, $size = 'full' ) {
    ========================================================= */
 function dcs_ctx( $k ) { return isset( $GLOBALS['dcs_ctx'][ $k ] ) ? $GLOBALS['dcs_ctx'][ $k ] : null; }
 function is_front_page() { return 'front' === dcs_ctx( 'type' ); }
+function get_page_template_slug() { return ''; }
 function is_home() { return false; }
 function is_admin() { return false; }
 function is_feed() { return false; }
