@@ -4,7 +4,7 @@ Theme URI: https://designcasa.with-casa.com/
 Author: 株式会社エスホーム
 Author URI: https://shome.co.jp/
 Description: 建築家とつくる注文住宅ブランド design casa の加盟工務店・株式会社エスホーム（栃木県宇都宮市）の公式テーマ。施工例・建築家・家の仕様のカスタム投稿タイプ、SEO（タイトル／メタ／OGP／構造化データ）、資料請求フォームを内蔵しています。FTPでアップロードして有効化するだけで使えます。
-Version: 1.0.0
+Version: 1.2.0
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -108,8 +108,14 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; 
 }
 .site-head.is-solid{
   background:rgba(232,234,227,.94);
-  backdrop-filter:blur(10px);
   border-bottom-color:var(--line);
+}
+/* すりガラス効果は擬似要素に掛ける。
+   backdrop-filter を .site-head 自体に掛けると、その中の position:fixed な
+   オーバーレイメニューの基準がヘッダー内に変わり、メニューが開かなくなる。 */
+.site-head.is-solid::before{
+  content:""; position:absolute; inset:0; z-index:-1;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
 }
 .site-head__inner{
   width:min(100% - var(--gut)*2, 1440px); margin-inline:auto;
@@ -162,7 +168,7 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; 
    Hero
    ========================================================= */
 .hero{
-  position:relative; min-height:100svh;
+  position:relative; min-height:100vh; min-height:100svh;
   display:flex; align-items:flex-end;
   padding:120px var(--gut) clamp(60px,9vw,104px);
   color:var(--text-inv);
@@ -691,21 +697,25 @@ select.field__input{ appearance:none; background-image:linear-gradient(45deg,tra
    Responsive
    ========================================================= */
 @media (max-width:1080px){
-  .gnav__list{ gap:18px; }
-  .gnav__list a{ font-size:12px; }
   .works{ grid-template-columns:repeat(2,1fr); }
 }
 
-@media (max-width:860px){
-  .br-sp{ display:inline; }
-
-  /* --- ナビをオーバーレイに --- */
+/* =========================================================
+   コンパクトナビ（タブレット・スマートフォン）
+   iPadは縦768px・横1024pxのため、1080pxまでハンバーガーに切り替える。
+   横向きのiPadで、メニューがはみ出して押せなくなるのを防ぐ。
+   ========================================================= */
+@media (max-width:1080px){
   .head-cta{ display:none; }
+
   .navtoggle{
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-    margin-left:auto; z-index:120; padding:6px 2px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    margin-left:auto; z-index:120;
+    width:48px; height:48px;               /* 指で確実に押せる大きさ */
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
-  .navtoggle__bars{ position:relative; width:26px; height:11px; }
+  .navtoggle__bars{ position:relative; width:26px; height:11px; pointer-events:none; }
   .navtoggle__bars::before,.navtoggle__bars::after{
     content:""; position:absolute; left:0; width:100%; height:1px;
     background:var(--text-inv); transition:transform .35s, background-color .4s;
@@ -714,7 +724,7 @@ select.field__input{ appearance:none; background-image:linear-gradient(45deg,tra
   .navtoggle__bars::after{ bottom:0; }
   .navtoggle__text{
     font-family:var(--mono); font-size:9px; letter-spacing:.16em; color:var(--text-inv);
-    transition:color .4s;
+    transition:color .4s; pointer-events:none;
   }
   .site-head.is-solid .navtoggle__bars::before,
   .site-head.is-solid .navtoggle__bars::after{ background:var(--ink); }
@@ -725,34 +735,82 @@ select.field__input{ appearance:none; background-image:linear-gradient(45deg,tra
   .navtoggle[aria-expanded="true"] .navtoggle__text::after{
     content:"CLOSE"; font-size:9px; letter-spacing:.16em; color:var(--paper);
   }
-  /* メニューを開いてもロゴは見えたまま */
-  .brand{ position:relative; z-index:120; }
-  .site-head:has(.gnav.is-open) .brand__mark{ color:var(--paper); }
-  .site-head:has(.gnav.is-open) .brand__sub{ color:var(--text-inv-mute); }
 
+  /* メニューを開いてもロゴは見えたまま
+     （:has() 非対応のiPadOSでも効くよう、JSが付ける .is-navopen を使う）
+     .site-head.is-solid 側の指定より詳細度を高くしないと、暗い文字のままになる */
+  .brand{ position:relative; z-index:120; }
+  .is-navopen .site-head .brand__mark,
+  .is-navopen .site-head.is-solid .brand__mark{ color:var(--paper); }
+  .is-navopen .site-head .brand__sub,
+  .is-navopen .site-head.is-solid .brand__sub{ color:var(--text-inv-mute); }
+
+  /* 開いているときのアイコンは必ず明るい色に */
+  .site-head.is-solid .navtoggle[aria-expanded="true"] .navtoggle__bars::before,
+  .site-head.is-solid .navtoggle[aria-expanded="true"] .navtoggle__bars::after{ background:var(--paper); }
+  .site-head.is-solid .navtoggle[aria-expanded="true"] .navtoggle__text::after{ color:var(--paper); }
+
+  /* オーバーレイメニュー
+     clip-path は iOS/iPadOS Safari で「見えないのにタップを奪う」不具合があるため使わない。
+     visibility と pointer-events で確実に無効化する。 */
   .gnav{
     position:fixed; inset:0; z-index:110;
     background:var(--ink);
-    flex-direction:column; align-items:stretch; justify-content:center;
-    gap:0; padding:96px var(--gut) 40px;
-    clip-path:inset(0 0 100% 0);
-    transition:clip-path .55s cubic-bezier(.7,0,.2,1);
-    overflow-y:auto;
+    flex-direction:column; align-items:stretch; justify-content:flex-start;
+    gap:0; padding:92px var(--gut) calc(56px + env(safe-area-inset-bottom));
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    visibility:hidden; opacity:0; pointer-events:none;
+    transform:translateY(-10px);
+    transition:opacity .3s ease, transform .3s ease, visibility 0s linear .3s;
   }
-  .gnav.is-open{ clip-path:inset(0 0 0 0); }
+  .gnav.is-open{
+    visibility:visible; opacity:1; pointer-events:auto; transform:none;
+    transition:opacity .3s ease, transform .3s ease, visibility 0s;
+  }
   .gnav__list{ flex-direction:column; gap:0; }
   .gnav__list li{ border-bottom:1px solid rgba(232,234,227,.16); }
-  .gnav__list a{
-    display:block; padding:18px 0; font-size:16px;
+  /* オーバーレイの中は必ず明るい文字。
+     .site-head.is-solid .gnav__list a（暗い文字）より詳細度を高くしておく */
+  .site-head .gnav__list a,
+  .site-head.is-solid .gnav__list a{
+    display:flex; align-items:center; min-height:56px; padding:14px 0; font-size:16px;
     font-family:var(--mincho); letter-spacing:.09em; color:var(--text-inv);
+    -webkit-tap-highlight-color:rgba(224,162,75,.2);
   }
   .gnav__list a::after{ display:none; }
   .gnav__cta{
-    display:block; margin-top:34px; text-align:center; text-decoration:none;
-    background:var(--lamp); color:var(--ink); padding:17px; font-size:14px; letter-spacing:.1em;
+    display:block; margin-top:30px; text-align:center; text-decoration:none;
+    background:var(--lamp); color:var(--ink); padding:18px; font-size:14px; letter-spacing:.1em;
   }
 
-  .hero{ min-height:92svh; padding-bottom:112px; }
+  /* 開いているあいだ背面をスクロールさせない */
+  html.is-navopen{ overflow:hidden; }
+
+  /* 下部固定CTA */
+  .mobilebar{
+    display:grid; grid-template-columns:1fr 1.6fr;
+    position:fixed; inset:auto 0 0 0; z-index:90;
+    border-top:1px solid rgba(16,20,24,.15);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mobilebar a{
+    text-decoration:none; text-align:center; padding:16px 8px;
+    font-size:13.5px; letter-spacing:.08em;
+  }
+  .mobilebar__tel{ background:var(--ink); color:var(--text-inv); }
+  .mobilebar__cta{ background:var(--lamp); color:var(--ink); }
+  body{ padding-bottom:calc(54px + env(safe-area-inset-bottom)); }
+  .is-navopen .mobilebar{ display:none; }
+}
+
+@media (max-width:1080px) and (prefers-reduced-motion: reduce){
+  .gnav,.gnav.is-open{ transition:opacity .01s, visibility 0s; transform:none; }
+}
+
+@media (max-width:860px){
+  .br-sp{ display:inline; }
+
+  .hero{ min-height:92vh; min-height:92svh; padding-bottom:112px; }
   .hero__scroll{ display:none; }
   .hero__eyebrow{ font-size:10px; letter-spacing:.1em; margin-bottom:20px; }
   .hero__eyebrow .tick{ width:26px; margin-right:10px; }
@@ -784,19 +842,6 @@ select.field__input{ appearance:none; background-image:linear-gradient(45deg,tra
   .area{ grid-template-columns:1fr; }
   .map{ aspect-ratio:4/3; }
 
-  /* --- 下部固定CTA --- */
-  .mobilebar{
-    display:grid; grid-template-columns:1fr 1.6fr;
-    position:fixed; inset:auto 0 0 0; z-index:90;
-    border-top:1px solid rgba(16,20,24,.15);
-  }
-  .mobilebar a{
-    text-decoration:none; text-align:center; padding:15px 8px;
-    font-size:13px; letter-spacing:.08em;
-  }
-  .mobilebar__tel{ background:var(--ink); color:var(--text-inv); }
-  .mobilebar__cta{ background:var(--lamp); color:var(--ink); }
-  body{ padding-bottom:52px; }
 }
 
 @media (max-width:600px){
@@ -1380,7 +1425,7 @@ address{ font-style:normal; }
 
 /* ヒーロー（カバーブロック） */
 .entry-content--front .wp-block-cover.hero-block{
-  min-height:88svh; padding:120px var(--gut) clamp(60px,9vw,104px); color:var(--text-inv);
+  min-height:88vh; min-height:88svh; padding:120px var(--gut) clamp(60px,9vw,104px); color:var(--text-inv);
 }
 .entry-content--front .hero-block .wp-block-cover__inner-container{
   width:min(100%, var(--wrap)); margin-inline:auto;

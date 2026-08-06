@@ -6,7 +6,8 @@
 
 	/* ---------- ヘッダーの地色切り替え ---------- */
 	var head = document.querySelector( '.site-head' );
-	var hero = document.querySelector( '.hero' );
+	/* .hero は旧テンプレート、.hero-block はブロック（カバー）のヒーロー */
+	var hero = document.querySelector( '.hero, .hero-block' );
 
 	function updateHead() {
 		if ( ! head ) { return; }
@@ -17,23 +18,53 @@
 	window.addEventListener( 'scroll', updateHead, { passive: true } );
 	window.addEventListener( 'resize', updateHead );
 
-	/* ---------- モバイルナビ ---------- */
+	/* ---------- ハンバーガーメニュー ----------
+	 * iPad / iPhone の Safari 対策
+	 *  - 背面スクロールの固定は body に position:fixed を使う
+	 *    （overflow:hidden だけでは iOS でスクロールが止まらない）
+	 *  - :has() 非対応の端末でも動くよう、html に .is-navopen を付ける
+	 */
 	var toggle = document.querySelector( '.navtoggle' );
 	var nav = document.getElementById( 'gnav' );
+	var root = document.documentElement;
+	var scrollY = 0;
 
-	function closeNav() {
-		if ( ! toggle || ! nav ) { return; }
-		toggle.setAttribute( 'aria-expanded', 'false' );
-		nav.classList.remove( 'is-open' );
-		document.body.style.overflow = '';
+	function lockScroll() {
+		scrollY = window.scrollY || window.pageYOffset || 0;
+		document.body.style.position = 'fixed';
+		document.body.style.top = '-' + scrollY + 'px';
+		document.body.style.left = '0';
+		document.body.style.right = '0';
+		document.body.style.width = '100%';
 	}
 
+	function unlockScroll() {
+		document.body.style.position = '';
+		document.body.style.top = '';
+		document.body.style.left = '';
+		document.body.style.right = '';
+		document.body.style.width = '';
+		window.scrollTo( 0, scrollY );
+	}
+
+	function setNav( open ) {
+		if ( ! toggle || ! nav ) { return; }
+		if ( open === ( toggle.getAttribute( 'aria-expanded' ) === 'true' ) ) { return; }
+
+		toggle.setAttribute( 'aria-expanded', String( open ) );
+		toggle.setAttribute( 'aria-label', open ? 'メニューを閉じる' : 'メニューを開く' );
+		nav.classList.toggle( 'is-open', open );
+		root.classList.toggle( 'is-navopen', open );
+
+		if ( open ) { lockScroll(); } else { unlockScroll(); }
+	}
+
+	function closeNav() { setNav( false ); }
+
 	if ( toggle && nav ) {
-		toggle.addEventListener( 'click', function () {
-			var open = toggle.getAttribute( 'aria-expanded' ) === 'true';
-			toggle.setAttribute( 'aria-expanded', String( ! open ) );
-			nav.classList.toggle( 'is-open', ! open );
-			document.body.style.overflow = open ? '' : 'hidden';
+		toggle.addEventListener( 'click', function ( e ) {
+			e.preventDefault();
+			setNav( toggle.getAttribute( 'aria-expanded' ) !== 'true' );
 		} );
 
 		nav.addEventListener( 'click', function ( e ) {
@@ -44,9 +75,15 @@
 			if ( e.key === 'Escape' ) { closeNav(); }
 		} );
 
-		window.addEventListener( 'resize', function () {
-			if ( window.innerWidth > 860 ) { closeNav(); }
-		} );
+		/* 画面幅が広がった／回転したときはメニューを閉じる */
+		var mq = window.matchMedia( '(max-width:1080px)' );
+		var onChange = function () { if ( ! mq.matches ) { closeNav(); } };
+		if ( mq.addEventListener ) {
+			mq.addEventListener( 'change', onChange );
+		} else if ( mq.addListener ) {
+			mq.addListener( onChange );
+		}
+		window.addEventListener( 'orientationchange', closeNav );
 	}
 
 	/* ---------- スクロールで現れる ---------- */
