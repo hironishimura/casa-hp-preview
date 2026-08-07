@@ -32,7 +32,7 @@ function dcs_seo_context() {
 	$image  = get_theme_file_uri( 'assets/img/common/hero.jpg' );
 
 	if ( is_front_page() ) {
-		$title = '宇都宮の工務店｜建築家とつくる注文住宅 design casa（デザインカーサ）｜株式会社エスホーム';
+		$title = '宇都宮の注文住宅｜建築家とつくる design casa（デザインカーサ）｜株式会社エスホーム';
 		$desc  = '宇都宮市・栃木県で注文住宅を建てるなら工務店の株式会社エスホームへ。全国の建築家と design casa でつくるデザイン住宅を、耐震等級3・断熱等級6の標準仕様で。平屋・エアコン1台の全館空調・ペットと暮らす家まで施工例多数。資料請求受付中。';
 	} elseif ( is_singular() ) {
 		$post_id = get_the_ID();

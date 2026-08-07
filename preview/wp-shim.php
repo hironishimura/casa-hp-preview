@@ -17,38 +17,10 @@ if ( ! defined( 'DCS_BUILD' ) ) { define( 'DCS_BUILD', false ); }
 
 define( 'DCS_THEME_URI', DCS_SITE . DCS_ASSET_BASE );
 
-/**
- * 施工例タグの URL 用スラッグ（日本語をURLに出さないための対応表）。
- *
- * @return array
+/*
+ * タームのURL用スラッグ対応表は、テーマ側の dcs_term_slugs()（inc/content.php）が持ちます。
+ * プレビューと本番でURLがずれないよう、ここでは定義せずそちらを使います。
  */
-function dcs_tag_slugs() {
-	return array(
-		'2階建て' => '2kai', '平屋' => 'hiraya', '木天井' => 'ki-tenjo',
-		'スケルトン階段' => 'skeleton-kaidan', '畳コーナー' => 'tatami-corner',
-		'吹き抜け' => 'fukinuke', 'ウッドデッキ' => 'wood-deck', 'ガレージ' => 'garage',
-		'中庭' => 'nakaniwa', '勾配天井' => 'kobai-tenjo', 'アイランドキッチン' => 'island-kitchen',
-		'眺望' => 'chobo', '大開口' => 'dai-kaiko', '2階リビング' => '2kai-living',
-		'書斎' => 'shosai', '小上がり' => 'koagari', '小上がり畳' => 'koagari-tatami',
-		'造作カウンター' => 'zosaku-counter', 'バルコニー' => 'balcony', '土間' => 'doma',
-		'造作本棚' => 'zosaku-hondana', 'ダークトーン' => 'dark-tone', 'パントリー' => 'pantry',
-		'造作洗面' => 'zosaku-senmen', '室内窓' => 'shitsunai-mado', 'スタディコーナー' => 'study-corner',
-		'カーポート' => 'carport', '間接照明' => 'kansetsu-shomei', '対面キッチン' => 'taimen-kitchen',
-		'庭' => 'niwa', '造作棚' => 'zosaku-tana', '回遊動線' => 'kaiyu-dosen',
-		'ルーフテラス' => 'roof-terrace', 'ファミリークローゼット' => 'family-closet',
-		'梁見せ' => 'hari-mise', '板塀' => 'ita-bei', 'ネイビー' => 'navy',
-		'造作家具' => 'zosaku-kagu', '併用住宅' => 'heiyo-jutaku', '深い軒' => 'fukai-noki',
-		'造作ソファ' => 'zosaku-sofa', '縁側' => 'engawa', 'ジャパンディ' => 'japandi',
-		'コの字' => 'kono-ji', 'ランドリー' => 'laundry', '土間収納' => 'doma-shuno',
-		'ルーフバルコニー' => 'roof-balcony', 'スカイバス' => 'sky-bath', '窓辺ベンチ' => 'madobe-bench',
-		'大屋根' => 'oyane', '狭小地' => 'kyoshochi', '高窓' => 'takamado',
-		'ボルダリング' => 'bouldering', 'スキップフロア' => 'skip-floor', '造作ベンチ' => 'zosaku-bench',
-		'天窓' => 'tenmado', 'アプローチ' => 'approach', 'モルタル' => 'mortar',
-		'ジャグジー' => 'jacuzzi', '夜景' => 'yakei', '趣味室' => 'shumi-shitsu',
-		'木ルーバー' => 'ki-louver', 'ロフト' => 'loft', '変形地' => 'henkeichi',
-		'ハンモック' => 'hammock', '柱見せ' => 'hashira-mise',
-	);
-}
 
 /* =========================================================
    データストア
@@ -102,7 +74,7 @@ function dcs_pv_att( $rel, $caption, $alt ) {
  * タームを作る。
  */
 function dcs_pv_term( $taxonomy, $name ) {
-	$map  = dcs_tag_slugs();
+	$map  = dcs_term_slugs( $taxonomy );
 	$slug = isset( $map[ $name ] ) ? $map[ $name ] : rawurlencode( $name );
 	if ( isset( $GLOBALS['dcs_terms'][ $taxonomy ][ $name ] ) ) {
 		return $GLOBALS['dcs_terms'][ $taxonomy ][ $name ];

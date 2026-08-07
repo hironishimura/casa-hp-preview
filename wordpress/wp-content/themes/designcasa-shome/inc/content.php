@@ -10,6 +10,61 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * タクソノミーのタームに使うURL用スラッグ（日本語をURLに出さないための対応表）。
+ *
+ * WordPress にターム名だけを渡すと、スラッグが日本語のURLエンコード
+ * （/works/feature/%e5%b9%b3%e5%b1%8b/ のような形）になります。
+ * 環境によってはこれが404になるため、必ずローマ字のスラッグを明示します。
+ *
+ * 対応表にない名前は、取り込み時にローマ字化できないので日本語のままになります。
+ * 施工例データにタグを追加したときは、ここにも1行足してください。
+ *
+ * @param string $taxonomy タクソノミー名。省略すると全体を返す。
+ * @return array<string,string>|array<string,array<string,string>>
+ */
+function dcs_term_slugs( $taxonomy = '' ) {
+	$map = array(
+		'dc_work_tag'  => array(
+			'2階建て' => '2kai', '平屋' => 'hiraya', '木天井' => 'ki-tenjo',
+			'スケルトン階段' => 'skeleton-kaidan', '畳コーナー' => 'tatami-corner',
+			'吹き抜け' => 'fukinuke', 'ウッドデッキ' => 'wood-deck', 'ガレージ' => 'garage',
+			'中庭' => 'nakaniwa', '勾配天井' => 'kobai-tenjo', 'アイランドキッチン' => 'island-kitchen',
+			'眺望' => 'chobo', '大開口' => 'dai-kaiko', '2階リビング' => '2kai-living',
+			'書斎' => 'shosai', '小上がり' => 'koagari', '小上がり畳' => 'koagari-tatami',
+			'造作カウンター' => 'zosaku-counter', 'バルコニー' => 'balcony', '土間' => 'doma',
+			'造作本棚' => 'zosaku-hondana', 'ダークトーン' => 'dark-tone', 'パントリー' => 'pantry',
+			'造作洗面' => 'zosaku-senmen', '室内窓' => 'shitsunai-mado', 'スタディコーナー' => 'study-corner',
+			'カーポート' => 'carport', '間接照明' => 'kansetsu-shomei', '対面キッチン' => 'taimen-kitchen',
+			'庭' => 'niwa', '造作棚' => 'zosaku-tana', '回遊動線' => 'kaiyu-dosen',
+			'ルーフテラス' => 'roof-terrace', 'ファミリークローゼット' => 'family-closet',
+			'梁見せ' => 'hari-mise', '板塀' => 'ita-bei', 'ネイビー' => 'navy',
+			'造作家具' => 'zosaku-kagu', '併用住宅' => 'heiyo-jutaku', '深い軒' => 'fukai-noki',
+			'造作ソファ' => 'zosaku-sofa', '縁側' => 'engawa', 'ジャパンディ' => 'japandi',
+			'コの字' => 'kono-ji', 'ランドリー' => 'laundry', '土間収納' => 'doma-shuno',
+			'ルーフバルコニー' => 'roof-balcony', 'スカイバス' => 'sky-bath', '窓辺ベンチ' => 'madobe-bench',
+			'大屋根' => 'oyane', '狭小地' => 'kyoshochi', '高窓' => 'takamado',
+			'ボルダリング' => 'bouldering', 'スキップフロア' => 'skip-floor', '造作ベンチ' => 'zosaku-bench',
+			'天窓' => 'tenmado', 'アプローチ' => 'approach', 'モルタル' => 'mortar',
+			'ジャグジー' => 'jacuzzi', '夜景' => 'yakei', '趣味室' => 'shumi-shitsu',
+			'木ルーバー' => 'ki-louver', 'ロフト' => 'loft', '変形地' => 'henkeichi',
+			'ハンモック' => 'hammock', '柱見せ' => 'hashira-mise',
+		),
+		'dc_spec_cat' => array(
+			'構造・耐震' => 'kozo-taishin', '断熱・気密' => 'dannetsu-kimitsu',
+			'空調・換気' => 'kucho-kanki', 'キッチン・水まわり' => 'kitchen-mizumawari',
+			'内装・建材' => 'naiso-kenzai', '外装' => 'gaiso',
+			'建具・造作' => 'tategu-zosaku', 'オプション' => 'option',
+		),
+	);
+
+	if ( '' === $taxonomy ) {
+		return $map;
+	}
+
+	return isset( $map[ $taxonomy ] ) ? $map[ $taxonomy ] : array();
+}
+
+/**
  * 家づくりの流れ（全14ステップ）。
  *
  * @return array<int,array{title:string,who:string,body:string}>
@@ -155,26 +210,26 @@ function dcs_faq_items() {
 function dcs_reasons() {
 	return array(
 		array(
-			'title' => '実績のある建築家が、あなたの敷地のためだけに設計する',
-			'body'  => '規格プランの当てはめではありません。design casa に登録する建築家が、あなたの敷地の形・方位・周辺環境と、暮らし方のヒアリングをもとに一邸ずつ設計します。打ち合わせは建築家と直接、3回。図面の裏にある考え方まで、その場で聞くことができます。',
+			'title' => '実績のある建築家が、あなたの敷地のためだけに注文住宅を設計する',
+			'body'  => '規格プランの当てはめではありません。design casa に登録する建築家が、あなたの敷地の形・方位・周辺環境と、暮らし方のヒアリングをもとに注文住宅を一邸ずつ設計します。打ち合わせは建築家と直接、3回。図面の裏にある考え方まで、その場で聞くことができます。',
 			'img'   => 'reason-01.jpg',
 			'link'  => '/architect/',
 		),
 		array(
-			'title' => '耐震等級3・断熱等級6が標準。性能は削らない',
+			'title' => '耐震等級3・断熱等級6が標準。注文住宅の性能は削らない',
 			'body'  => '宇都宮市を含む栃木県は、冬の冷え込みと夏の蒸し暑さの差が大きい地域です。構造計算にもとづく耐震等級3（最高等級）と、断熱等級6（HEAT20 G2水準）を標準仕様としました。デザインのために性能を落とすことはしません。',
 			'img'   => 'reason-02.jpg',
 			'link'  => '/spec/',
 		),
 		array(
 			'title' => 'エアコン1台で、家じゅうの温度がそろう',
-			'body'  => '高気密・高断熱に加え、夏の日射を遮り冬の日射を取り込むパッシブ設計と、計画的な空気の流れによって、少ないエネルギーで家全体を快適に保ちます。廊下や脱衣室が寒くない家は、光熱費だけでなく健康にも効いてきます。',
+			'body'  => '高気密・高断熱に加え、夏の日射を遮り冬の日射を取り込むパッシブ設計と、計画的な空気の流れによって、少ないエネルギーで家全体を快適に保ちます。廊下や脱衣室が寒くない家は、光熱費だけでなく健康にも効いてきます。宇都宮の冬を考えるほど、ここが効いてきます。',
 			'img'   => 'reason-03.jpg',
 			'link'  => '/spec/',
 		),
 		array(
-			'title' => '宇都宮の地元工務店が、最後まで責任を持つ',
-			'body'  => '株式会社エスホームは、宇都宮市平出町の工務店です。設計から施工、引き渡し後の点検まで、地元の会社が一貫して担当します。大手ほど規格に縛られず、ローコスト系ほど性能を削らない。その中間にある選択肢でありたいと考えています。',
+			'title' => '宇都宮の地元工務店が、注文住宅を最後まで見届ける',
+			'body'  => '株式会社エスホームは、宇都宮市平出町の工務店です。宇都宮の注文住宅を、設計から施工、引き渡し後の点検まで地元の会社が一貫して担当します。大手ほど規格に縛られず、ローコスト系ほど性能を削らない。その中間にある選択肢でありたいと考えています。',
 			'img'   => 'reason-04.jpg',
 			'link'  => '/company/',
 		),

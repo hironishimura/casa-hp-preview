@@ -17,14 +17,110 @@ function dcs_after_switch_theme() {
 	dcs_setup_permalinks();
 	dcs_setup_pages();
 	dcs_setup_menus();
+	dcs_sync_term_slugs();
 
 	if ( ! get_option( 'dcs_imported' ) ) {
 		update_option( 'dcs_needs_import', 1 );
 	}
 
+	update_option( 'dcs_migrated_version', DCS_VERSION );
 	flush_rewrite_rules();
 }
 add_action( 'after_switch_theme', 'dcs_after_switch_theme' );
+
+/**
+ * ターム名の配列を、ローマ字スラッグ付きのターム群にして term_id の配列で返す。
+ *
+ * ターム名だけを wp_set_object_terms() に渡すと、スラッグが日本語の
+ * URLエンコードになり、環境によって施工例の絞り込みタブが404になります。
+ *
+ * @param array  $names    ターム名の配列。
+ * @param string $taxonomy タクソノミー名。
+ * @return array<int,int> term_id の配列。
+ */
+function dcs_ensure_terms( $names, $taxonomy ) {
+	$map = dcs_term_slugs( $taxonomy );
+	$ids = array();
+
+	foreach ( (array) $names as $name ) {
+		$name = trim( (string) $name );
+		if ( '' === $name ) {
+			continue;
+		}
+
+		$term = get_term_by( 'name', $name, $taxonomy );
+
+		if ( ! $term ) {
+			$args = isset( $map[ $name ] ) ? array( 'slug' => $map[ $name ] ) : array();
+			$new  = wp_insert_term( $name, $taxonomy, $args );
+			if ( is_wp_error( $new ) ) {
+				continue;
+			}
+			$ids[] = (int) $new['term_id'];
+			continue;
+		}
+
+		/* 既にあるタームのスラッグが日本語のままなら、ローマ字に直す */
+		if ( isset( $map[ $name ] ) && $term->slug !== $map[ $name ] ) {
+			wp_update_term( $term->term_id, $taxonomy, array( 'slug' => $map[ $name ] ) );
+		}
+		$ids[] = (int) $term->term_id;
+	}
+
+	return $ids;
+}
+
+/**
+ * 既存タームのスラッグをローマ字にそろえる。
+ *
+ * すでに公開済みのサイトでは、タームが日本語スラッグで作られています。
+ * 施工例を取り込み直さなくても直せるよう、単独で実行できるようにしています。
+ *
+ * @return int 直した件数。
+ */
+function dcs_sync_term_slugs() {
+	$fixed = 0;
+
+	foreach ( dcs_term_slugs() as $taxonomy => $map ) {
+		if ( ! taxonomy_exists( $taxonomy ) ) {
+			continue;
+		}
+		foreach ( $map as $name => $slug ) {
+			$term = get_term_by( 'name', $name, $taxonomy );
+			if ( ! $term || $term->slug === $slug ) {
+				continue;
+			}
+			/* 同じスラッグの別タームがある場合は触らない（重複を作らない） */
+			if ( get_term_by( 'slug', $slug, $taxonomy ) ) {
+				continue;
+			}
+			$res = wp_update_term( $term->term_id, $taxonomy, array( 'slug' => $slug ) );
+			if ( ! is_wp_error( $res ) ) {
+				$fixed++;
+			}
+		}
+	}
+
+	return $fixed;
+}
+
+/**
+ * テーマ更新時の移行処理。
+ *
+ * 保存してあるバージョンが今のテーマより古ければ一度だけ実行します。
+ * ZIPを入れ直すだけで直るようにするための仕組みです。
+ */
+function dcs_maybe_migrate() {
+	if ( get_option( 'dcs_migrated_version' ) === DCS_VERSION ) {
+		return;
+	}
+
+	dcs_sync_term_slugs();
+	flush_rewrite_rules();
+
+	update_option( 'dcs_migrated_version', DCS_VERSION );
+}
+add_action( 'admin_init', 'dcs_maybe_migrate' );
 
 /**
  * パーマリンクを「投稿名」にする（SEOの基本）。
@@ -394,6 +490,21 @@ function dcs_import_page() {
 			</p>
 		</div>
 
+		<h2 style="margin-top:32px">テーマを新しいZIPに入れ替えたとき</h2>
+		<div style="max-width:760px;border:1px solid #c3c4c7;background:#fff;padding:20px">
+			<p style="margin-top:0">
+				ページの文章はデータベースに保存されているため、テーマを入れ替えただけでは変わりません。
+				<strong>文章の修正を反映させたいときだけ</strong>、下のボタンを押してください。写真の取り込みはやり直しません（数秒で終わります）。
+			</p>
+			<p style="color:#b32d2e">
+				※ ブロックエディタでページ本文をご自分で編集された場合、その内容は上書きされます。
+			</p>
+			<p>
+				<button type="button" class="button" id="dcs-rebuild">固定ページの文章を作り直す</button>
+				<span id="dcs-rebuild-log" style="margin-left:10px;color:#646970"></span>
+			</p>
+		</div>
+
 		<h2 style="margin-top:32px">取り込み後にご確認ください</h2>
 		<ol>
 			<li><a href="<?php echo esc_url( admin_url( 'options-permalink.php' ) ); ?>">設定 &gt; パーマリンク設定</a> を開いて「変更を保存」を1回押してください（URLの再構築）。</li>
@@ -447,6 +558,29 @@ function dcs_import_page() {
 			start.disabled = true;
 			start.textContent = '取り込み中…';
 			step();
+		} );
+
+		const rebuild = document.getElementById( 'dcs-rebuild' );
+		const rebuildLog = document.getElementById( 'dcs-rebuild-log' );
+
+		rebuild.addEventListener( 'click', function () {
+			if ( ! confirm( '固定ページの本文をテーマの内容で作り直します。ブロックエディタでの編集内容は失われます。よろしいですか？' ) ) { return; }
+			rebuild.disabled = true;
+			rebuildLog.textContent = '作り直しています…';
+			const body = new FormData();
+			body.append( 'action', 'dcs_rebuild_pages' );
+			body.append( 'nonce', nonce );
+			fetch( ajaxurl, { method: 'POST', body: body, credentials: 'same-origin' } )
+				.then( r => r.json() )
+				.then( d => {
+					rebuild.disabled = false;
+					if ( ! d.success ) { throw new Error( d.data || 'エラー' ); }
+					rebuildLog.textContent = '完了しました（' + d.data.pages.join( '／' ) + '）';
+				} )
+				.catch( e => {
+					rebuild.disabled = false;
+					rebuildLog.textContent = 'エラー: ' + e.message;
+				} );
 		} );
 
 		reset.addEventListener( 'click', function () {
@@ -535,6 +669,37 @@ function dcs_ajax_import_reset() {
 	wp_send_json_success();
 }
 add_action( 'wp_ajax_dcs_import_reset', 'dcs_ajax_import_reset' );
+
+/**
+ * Ajax：固定ページの本文だけを作り直す。
+ *
+ * 文章を直したテーマに入れ替えても、すでに登録済みのページ本文は
+ * データベースに保存されたままなので自動では変わりません。
+ * 写真を取り込み直さずに文章だけ反映させるための処理です。
+ */
+function dcs_ajax_rebuild_pages() {
+	check_ajax_referer( 'dcs_import', 'nonce' );
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( '権限がありません' );
+	}
+
+	@set_time_limit( 120 ); // phpcs:ignore
+
+	$titles = array();
+	foreach ( dcs_page_defs() as $slug => $def ) {
+		if ( empty( $def['blocks'] ) ) {
+			continue;
+		}
+		dcs_import_page_content( $slug );
+		$titles[] = $def['title'];
+	}
+
+	dcs_sync_term_slugs();
+	flush_rewrite_rules();
+
+	wp_send_json_success( array( 'pages' => $titles ) );
+}
+add_action( 'wp_ajax_dcs_rebuild_pages', 'dcs_ajax_rebuild_pages' );
 
 /* =========================================================
    個別の取り込み処理
@@ -692,8 +857,8 @@ function dcs_import_work( $w ) {
 	update_post_meta( $post_id, 'dcs_work_area', $w['pref'] );
 	update_post_meta( $post_id, 'dcs_work_structure', '木造' . $w['type'] );
 
-	/* 特徴タグ */
-	wp_set_object_terms( $post_id, $w['tags'], 'dc_work_tag' );
+	/* 特徴タグ（スラッグをローマ字で固定するため、ID指定で割り当てる） */
+	wp_set_object_terms( $post_id, dcs_ensure_terms( $w['tags'], 'dc_work_tag' ), 'dc_work_tag' );
 
 	/* ギャラリー画像 */
 	$ids = array();
@@ -848,7 +1013,7 @@ function dcs_import_spec( $s ) {
 	update_post_meta( $post_id, 'dcs_seo_title', $s['seo_title'] );
 	update_post_meta( $post_id, 'dcs_seo_desc', $s['seo_desc'] );
 
-	wp_set_object_terms( $post_id, array( $s['cat'] ), 'dc_spec_cat' );
+	wp_set_object_terms( $post_id, dcs_ensure_terms( array( $s['cat'] ), 'dc_spec_cat' ), 'dc_spec_cat' );
 
 	/* 建材・製品の写真 */
 	$ids = array();

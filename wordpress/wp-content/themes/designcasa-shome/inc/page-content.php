@@ -41,7 +41,7 @@ function dcs_b_sechead( $eyebrow, $title, $note = '' ) {
  * @return string
  */
 function dcs_page_home_blocks() {
-	$hero = dcs_import_common( 'hero.jpg', '宇都宮市の工務店エスホームが建てる、建築家設計の注文住宅の夜景' );
+	$hero = dcs_import_common( 'hero.jpg', '宇都宮市の工務店エスホームが建てる、建築家が設計した注文住宅の夜景' );
 	$url  = $hero ? wp_get_attachment_image_url( $hero, 'full' ) : '';
 
 	$b = array();
@@ -62,8 +62,8 @@ function dcs_page_home_blocks() {
 	);
 	$cover_inner = dcs_b_join(
 		array(
-			dcs_b_paragraph( '<span class="tick"></span>宇都宮市の工務店｜建築家とつくる注文住宅', 'hero__eyebrow' ),
-			dcs_b_heading( 1, 'デザインも、性能も。どちらも諦めない宇都宮の家。', 'hero__title' ),
+			dcs_b_paragraph( '<span class="tick"></span>注文住宅 宇都宮｜建築家とつくる design casa', 'hero__eyebrow' ),
+			dcs_b_heading( 1, 'デザインも、性能も。どちらも諦めない宇都宮の注文住宅。', 'hero__title' ),
 			dcs_b_paragraph(
 				'全国の建築家とつくる注文住宅ブランド <strong>design casa</strong>。その加盟工務店として、株式会社エスホームが宇都宮市・栃木県で design casa の家をお届けします。耐震等級3・断熱等級6を標準仕様に、エアコン1台で家じゅうの温度がそろう高気密高断熱の住まいを。',
 				'hero__lead'
@@ -94,10 +94,10 @@ function dcs_page_home_blocks() {
 			array(
 				dcs_b_sechead(
 					'ABOUT design casa',
-					'建築家・工務店・あなた。3者でつくる、こだわりの家。',
-					'design casa は「建築家と建てる家」を、もっと多くの人に届けるための仕組みです。全国のネットワークで建材を共同購入し、設計から施工までの流れを標準化することで、建築家の設計料を<strong>建築費の約4%</strong>に抑えています。'
+					'建築家・工務店・あなた。3者でつくる、宇都宮の注文住宅。',
+					'design casa は「建築家と建てる注文住宅」を、もっと多くの人に届けるための仕組みです。全国のネットワークで建材を共同購入し、設計から施工までの流れを標準化することで、建築家の設計料を<strong>建築費の約4%</strong>に抑えています。'
 				),
-				dcs_b_paragraph( '「デザイン性の高い家は高い」「建築家は敷居が高い」。宇都宮市でも、そう思って諦めてしまう方が少なくありません。' ),
+				dcs_b_paragraph( '「デザイン性の高い注文住宅は高い」「建築家は敷居が高い」。宇都宮市でも、そう思って諦めてしまう方が少なくありません。' ),
 				dcs_b_paragraph( 'けれど、規格プランから選ぶ家と、建築家が敷地を見て設計する家とでは、10年後20年後の暮らしやすさが変わってきます。土地の形、日の入り方、隣家の窓の位置。それらを読んだうえで窓の高さひとつを決められるかどうかが、住み心地を分けます。' ),
 				dcs_b_image( $concept, 'design casa 施工実例／中庭のある平屋', 'large' ),
 				dcs_b_button( 'デザインカーサとは', home_url( '/concept/' ) ),
@@ -110,7 +110,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'STANDARD', '性能は、削らない。', '宇都宮市の冬の冷え込みと、夏の蒸し暑さ。栃木県の気候を前提に決めた標準仕様です。オプションではありません。' ),
+				dcs_b_sechead( 'STANDARD', '注文住宅の性能は、削らない。', '宇都宮市の冬の冷え込みと、夏の蒸し暑さ。栃木県の気候を前提に決めた標準仕様です。オプションではありません。' ),
 				dcs_b_shortcode( '[dcs_figures]' ),
 				dcs_b_button( '家の仕様をすべて見る', home_url( '/spec/' ) ),
 			)
@@ -119,7 +119,7 @@ function dcs_page_home_blocks() {
 	);
 
 	/* ---- 選ばれる理由 ---- */
-	$reasons = array( dcs_b_sechead( 'WHY S HOME', '宇都宮で工務店を選ぶとき、見ていただきたい4つのこと。' ) );
+	$reasons = array( dcs_b_sechead( 'WHY S HOME', '宇都宮で注文住宅の工務店を選ぶとき、見ていただきたい4つのこと。' ) );
 	foreach ( dcs_reasons() as $i => $r ) {
 		$img = dcs_import_common( $r['img'], $r['title'] );
 		$reasons[] = dcs_b_join(
@@ -137,7 +137,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'CASE STUDY', '施工例', 'design casa の建築家が設計した実例です。平屋、中庭のある家、ガレージハウス、2階リビング。宇都宮市で建てる家のイメージづくりにお役立てください。' ),
+				dcs_b_sechead( 'CASE STUDY', '注文住宅の施工例', 'design casa の建築家が設計した注文住宅の実例です。平屋、中庭のある家、ガレージハウス、2階リビング。宇都宮市で建てる家のイメージづくりにお役立てください。' ),
 				dcs_b_shortcode( '[dcs_works count="6"]' ),
 				dcs_b_button( '施工例をすべて見る', home_url( '/works/' ) ),
 			)
@@ -149,7 +149,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'ARCHITECT', '設計するのは、実績のある建築家です。', 'design casa に登録する建築家をご紹介します。作品集をご覧いただきながら、あなたの感覚に近い建築家を一緒に選んでいきましょう。' ),
+				dcs_b_sechead( 'ARCHITECT', '注文住宅を設計するのは、実績のある建築家です。', 'design casa に登録し、宇都宮の注文住宅を手がける建築家をご紹介します。作品集をご覧いただきながら、あなたの感覚に近い建築家を一緒に選んでいきましょう。' ),
 				dcs_b_shortcode( '[dcs_architects]' ),
 				dcs_b_button( '建築家の紹介を見る', home_url( '/architect/' ) ),
 			)
@@ -161,7 +161,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'FLOW', '家づくりの流れ', 'ご相談からお引き渡しまで14ステップ。ここでは最初の4つをご紹介します。' ),
+				dcs_b_sechead( 'FLOW', '注文住宅ができるまでの流れ', '宇都宮での注文住宅は、ご相談からお引き渡しまで14ステップ。ここでは最初の4つをご紹介します。' ),
 				dcs_b_shortcode( '[dcs_flow from="1" to="4"]' ),
 				dcs_b_button( '14ステップすべてを見る', home_url( '/flow/' ) ),
 			)
@@ -173,7 +173,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'AREA', '対応エリア', '宇都宮市を中心に、栃木県内で注文住宅の設計・施工を承っています。' ),
+				dcs_b_sechead( 'AREA', '注文住宅の対応エリア', '宇都宮市を中心に、栃木県内で注文住宅の設計・施工を承っています。' ),
 				dcs_b_shortcode( '[dcs_area map="1"]' ),
 			)
 		),
@@ -184,7 +184,7 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'FAQ', 'よくあるご質問' ),
+				dcs_b_sechead( 'FAQ', '注文住宅のよくあるご質問' ),
 				dcs_b_shortcode( '[dcs_faq]' ),
 			)
 		),
@@ -195,8 +195,8 @@ function dcs_page_home_blocks() {
 	$b[] = dcs_b_group(
 		dcs_b_join(
 			array(
-				dcs_b_sechead( 'COMPANY', '施工会社について' ),
-				dcs_b_paragraph( '宇都宮市平出町の工務店です。「大手ほど規格に縛られず、ローコスト系ほど性能を削らない」。その中間にある選択肢でありたいと考えています。設計から施工、引き渡し後の点検まで、地元の会社が一貫して責任を持ちます。' ),
+				dcs_b_sechead( 'COMPANY', '注文住宅を建てる施工会社について' ),
+				dcs_b_paragraph( '宇都宮市平出町の工務店です。「大手ほど規格に縛られず、ローコスト系ほど性能を削らない」。宇都宮の注文住宅で、その中間にある選択肢でありたいと考えています。設計から施工、引き渡し後の点検まで、地元の会社が一貫して責任を持ちます。' ),
 				dcs_b_shortcode( '[dcs_company_table]' ),
 				dcs_b_button( '施工会社を紹介する', home_url( '/company/' ) ),
 			)
