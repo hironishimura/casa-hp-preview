@@ -4,7 +4,7 @@ Theme URI: https://designcasa.with-casa.com/
 Author: 株式会社エスホーム
 Author URI: https://shome.co.jp/
 Description: 建築家とつくる注文住宅ブランド design casa の加盟工務店・株式会社エスホーム（栃木県宇都宮市）の公式テーマ。施工例・建築家・家の仕様のカスタム投稿タイプ、SEO（タイトル／メタ／OGP／構造化データ）、資料請求フォームを内蔵しています。FTPでアップロードして有効化するだけで使えます。
-Version: 1.3.0
+Version: 1.4.0
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -122,6 +122,13 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; 
   display:flex; align-items:center; gap:24px;
   height:78px;
 }
+.brand-wrap{ flex:0 0 auto; min-width:0; }
+.brand__seo{
+  font-size:10px; letter-spacing:.04em; line-height:1.4;
+  color:var(--text-inv-mute); margin:0 0 4px;
+  transition:color .4s ease;
+}
+.site-head.is-solid .brand__seo{ color:var(--text-mute); }
 .brand{ text-decoration:none; display:flex; align-items:baseline; gap:12px; flex:0 0 auto; }
 .brand__mark{
   font-family:var(--mincho); font-weight:600;
@@ -739,11 +746,14 @@ select.field__input{ appearance:none; background-image:linear-gradient(45deg,tra
   /* メニューを開いてもロゴは見えたまま
      （:has() 非対応のiPadOSでも効くよう、JSが付ける .is-navopen を使う）
      .site-head.is-solid 側の指定より詳細度を高くしないと、暗い文字のままになる */
+  .brand-wrap{ position:relative; z-index:120; }
   .brand{ position:relative; z-index:120; }
   .is-navopen .site-head .brand__mark,
   .is-navopen .site-head.is-solid .brand__mark{ color:var(--paper); }
   .is-navopen .site-head .brand__sub,
   .is-navopen .site-head.is-solid .brand__sub{ color:var(--text-inv-mute); }
+  .is-navopen .site-head .brand__seo,
+  .is-navopen .site-head.is-solid .brand__seo{ color:var(--text-inv-mute); }
 
   /* 開いているときのアイコンは必ず明るい色に */
   .site-head.is-solid .navtoggle[aria-expanded="true"] .navtoggle__bars::before,

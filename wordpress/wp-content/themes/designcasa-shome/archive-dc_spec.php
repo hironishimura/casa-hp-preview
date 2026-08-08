@@ -18,7 +18,7 @@ dcs_breadcrumb();
 		<p class="phero__eyebrow"><span class="tick" aria-hidden="true"></span>SPECIFICATION</p>
 		<h1 class="phero__title">家の仕様</h1>
 		<p class="phero__lead">
-			耐震等級3・断熱等級6が標準仕様です。オプションではありません。
+			耐震等級3・断熱等級6以上が標準仕様です。オプションではありません。
 			宇都宮市の冬の冷え込みと夏の蒸し暑さを前提に、性能から決めた仕様を公開します。
 			高気密高断熱、エアコン1台の全館空調、地震に強い構造まで、栃木県で家を建てる方に知っておいていただきたい中身です。
 		</p>
@@ -31,7 +31,7 @@ dcs_breadcrumb();
 			<p class="sec-head__eyebrow"><span class="tick" aria-hidden="true"></span>STANDARD</p>
 			<h2 class="sec-head__title">まずは、この2つ。</h2>
 			<p class="sec-head__note">
-				<strong>構造は耐震等級3、断熱は断熱等級6</strong>。この2つが標準です。
+				<strong>構造は耐震等級3、断熱は断熱等級6以上</strong>。この2つが標準です。
 				性能は後から足せません。だから最初から削らないと決めています。
 			</p>
 		</div>

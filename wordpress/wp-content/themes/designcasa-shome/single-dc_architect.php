@@ -55,7 +55,7 @@ while ( have_posts() ) :
 						<p>
 							design casa では、建築家と直接3回打ち合わせをしながらプランをつくります。
 							施工と保証は宇都宮市の工務店・株式会社エスホームが担当し、
-							耐震等級3・断熱等級6の標準仕様で仕上げます。
+							耐震等級3・断熱等級6以上の標準仕様で仕上げます。
 						</p>
 						<p><a class="btn btn--dark" href="<?php echo esc_url( home_url( '/contact/' ) ); ?>">相談する（無料）</a></p>
 					</div>

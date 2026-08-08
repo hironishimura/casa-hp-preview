@@ -22,10 +22,13 @@ defined( 'ABSPATH' ) || exit;
 
 <header class="site-head<?php echo is_front_page() ? '' : ' is-solid'; ?>">
 	<div class="site-head__inner">
-		<a class="brand" href="<?php echo esc_url( home_url( '/' ) ); ?>">
-			<span class="brand__mark">design casa</span>
-			<span class="brand__sub">UTSUNOMIYA / S HOME</span>
-		</a>
+		<div class="brand-wrap">
+			<p class="brand__seo">宇都宮のデザイン注文住宅なら、design casa宇都宮</p>
+			<a class="brand" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+				<span class="brand__mark">design casa</span>
+				<span class="brand__sub">UTSUNOMIYA / S HOME</span>
+			</a>
+		</div>
 
 		<nav class="gnav" id="gnav" aria-label="メインメニュー">
 			<?php

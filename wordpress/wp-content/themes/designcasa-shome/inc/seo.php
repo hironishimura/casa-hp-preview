@@ -33,7 +33,7 @@ function dcs_seo_context() {
 
 	if ( is_front_page() ) {
 		$title = '宇都宮の注文住宅｜建築家とつくる design casa（デザインカーサ）｜株式会社エスホーム';
-		$desc  = '宇都宮市・栃木県で注文住宅を建てるなら工務店の株式会社エスホームへ。全国の建築家と design casa でつくるデザイン住宅を、耐震等級3・断熱等級6の標準仕様で。平屋・エアコン1台の全館空調・ペットと暮らす家まで施工例多数。資料請求受付中。';
+		$desc  = '宇都宮市・栃木県で注文住宅を建てるなら工務店の株式会社エスホームへ。全国の建築家と design casa でつくるデザイン住宅を、耐震等級3・断熱等級6以上の標準仕様で。平屋・エアコン1台の全館空調・ペットと暮らす家まで施工例多数。資料請求受付中。';
 	} elseif ( is_singular() ) {
 		$post_id = get_the_ID();
 		$title   = dcs_meta( 'dcs_seo_title', $post_id );
@@ -69,12 +69,12 @@ function dcs_seo_context() {
 		$title = '建築家紹介｜宇都宮で建築家と建てる注文住宅 design casa｜エスホーム';
 		$desc  = '宇都宮市・栃木県で建築家とつくる注文住宅 design casa の登録建築家をご紹介。数百棟の実績を持つ建築家が、あなたの敷地と暮らしに合わせてデザイン住宅を設計します。設計料は建築費の約4%。';
 	} elseif ( is_post_type_archive( 'dc_spec' ) ) {
-		$title = '家の仕様一覧｜耐震等級3・断熱等級6が標準｜宇都宮の高気密高断熱住宅';
-		$desc  = '宇都宮市の工務店エスホームの標準仕様。地震に強い家をつくる耐震等級3、断熱等級6の高断熱・高気密、エアコン1台で家中を快適にする全館空調まで、構造・断熱・空調・建材の仕様をすべて公開しています。';
+		$title = '家の仕様一覧｜耐震等級3・断熱等級6以上が標準｜宇都宮の高気密高断熱住宅';
+		$desc  = '宇都宮市の工務店エスホームの標準仕様。地震に強い家をつくる耐震等級3、断熱等級6以上の高断熱・高気密、エアコン1台で家中を快適にする全館空調まで、構造・断熱・空調・建材の仕様をすべて公開しています。';
 	} elseif ( is_tax( 'dc_work_tag' ) || is_tax( 'dc_spec_cat' ) ) {
 		$term  = get_queried_object();
 		$title = sprintf( '%sの施工例｜宇都宮市・栃木県の注文住宅｜design casa × エスホーム', $term->name );
-		$desc  = $term->description ? dcs_trim_desc( $term->description ) : sprintf( '宇都宮市・栃木県で建てた「%s」の注文住宅事例をまとめました。建築家とつくるデザイン住宅を、耐震等級3・断熱等級6の標準仕様で。', $term->name );
+		$desc  = $term->description ? dcs_trim_desc( $term->description ) : sprintf( '宇都宮市・栃木県で建てた「%s」の注文住宅事例をまとめました。建築家とつくるデザイン住宅を、耐震等級3・断熱等級6以上の標準仕様で。', $term->name );
 	} elseif ( is_search() ) {
 		$title  = sprintf( '「%s」の検索結果｜%s', get_search_query(), $site );
 		$robots = 'noindex, follow';

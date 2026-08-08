@@ -349,7 +349,7 @@ function dcs_import_notice() {
 	}
 	$url = admin_url( 'tools.php?page=dcs-import' );
 	printf(
-		'<div class="notice notice-info"><p><strong>design casa テーマの初期データがまだ取り込まれていません。</strong><br>施工例67件・建築家13名・仕様8項目と写真を取り込みます。<a class="button button-primary" style="margin-left:8px" href="%s">取り込み画面をひらく</a></p></div>',
+		'<div class="notice notice-info"><p><strong>design casa テーマの初期データがまだ取り込まれていません。</strong><br>施工例67件・建築家13名・仕様9項目と写真を取り込みます。<a class="button button-primary" style="margin-left:8px" href="%s">取り込み画面をひらく</a></p></div>',
 		esc_url( $url )
 	);
 }
@@ -494,7 +494,9 @@ function dcs_import_page() {
 		<div style="max-width:760px;border:1px solid #c3c4c7;background:#fff;padding:20px">
 			<p style="margin-top:0">
 				ページの文章はデータベースに保存されているため、テーマを入れ替えただけでは変わりません。
-				<strong>文章の修正を反映させたいときだけ</strong>、下のボタンを押してください。写真の取り込みはやり直しません（数秒で終わります）。
+				<strong>文章の修正を反映させたいときだけ</strong>、下のボタンを押してください。
+				固定ページに加えて、家の仕様ページと施工例の絞り込みタグもテーマの内容で作り直します。
+				取り込み済みの写真はそのまま使うため、通常は数秒〜数十秒で終わります。
 			</p>
 			<p style="color:#b32d2e">
 				※ ブロックエディタでページ本文をご自分で編集された場合、その内容は上書きされます。
@@ -564,7 +566,7 @@ function dcs_import_page() {
 		const rebuildLog = document.getElementById( 'dcs-rebuild-log' );
 
 		rebuild.addEventListener( 'click', function () {
-			if ( ! confirm( '固定ページの本文をテーマの内容で作り直します。ブロックエディタでの編集内容は失われます。よろしいですか？' ) ) { return; }
+			if ( ! confirm( '固定ページと家の仕様ページの本文をテーマの内容で作り直します。ブロックエディタでの編集内容は失われます。よろしいですか？' ) ) { return; }
 			rebuild.disabled = true;
 			rebuildLog.textContent = '作り直しています…';
 			const body = new FormData();
@@ -629,7 +631,7 @@ function dcs_ajax_import_step() {
 
 	switch ( $job['type'] ) {
 		case 'spec':
-			dcs_import_spec( dcs_load_data( 'specs' )[ $job['index'] ] );
+			dcs_import_spec( dcs_load_data( 'specs' )[ $job['index'] ], $job['index'] + 1 );
 			break;
 		case 'architect':
 			dcs_import_architect( dcs_load_data( 'architects' )[ $job['index'] ] );
@@ -671,11 +673,15 @@ function dcs_ajax_import_reset() {
 add_action( 'wp_ajax_dcs_import_reset', 'dcs_ajax_import_reset' );
 
 /**
- * Ajax：固定ページの本文だけを作り直す。
+ * Ajax：固定ページと仕様ページの本文を作り直す。
  *
  * 文章を直したテーマに入れ替えても、すでに登録済みのページ本文は
  * データベースに保存されたままなので自動では変わりません。
  * 写真を取り込み直さずに文章だけ反映させるための処理です。
+ *
+ * 仕様ページ（dc_spec）と施工例の絞り込みタグも data/*.json に合わせて
+ * 作り直します。取り込み済みの写真はそのまま再利用し、テーマに新しく
+ * 増えた写真だけを追加で取り込みます。
  */
 function dcs_ajax_rebuild_pages() {
 	check_ajax_referer( 'dcs_import', 'nonce' );
@@ -683,7 +689,7 @@ function dcs_ajax_rebuild_pages() {
 		wp_send_json_error( '権限がありません' );
 	}
 
-	@set_time_limit( 120 ); // phpcs:ignore
+	@set_time_limit( 300 ); // phpcs:ignore
 
 	$titles = array();
 	foreach ( dcs_page_defs() as $slug => $def ) {
@@ -692,6 +698,67 @@ function dcs_ajax_rebuild_pages() {
 		}
 		dcs_import_page_content( $slug );
 		$titles[] = $def['title'];
+	}
+
+	/* 仕様ページを data/specs.json の内容で作り直す */
+	$keep = array();
+	foreach ( dcs_load_data( 'specs' ) as $i => $spec ) {
+		dcs_import_spec( $spec, $i + 1 );
+		$keep[]   = $spec['slug'];
+		$titles[] = $spec['title'];
+	}
+
+	/* データから消えた仕様ページを、添付写真ごと削除する */
+	$spec_ids = get_posts(
+		array(
+			'post_type'   => 'dc_spec',
+			'post_status' => 'any',
+			'numberposts' => -1,
+			'fields'      => 'ids',
+		)
+	);
+	foreach ( $spec_ids as $pid ) {
+		if ( in_array( get_post_field( 'post_name', $pid ), $keep, true ) ) {
+			continue;
+		}
+		$children = get_children(
+			array(
+				'post_parent' => $pid,
+				'post_type'   => 'attachment',
+				'fields'      => 'ids',
+			)
+		);
+		foreach ( $children as $aid ) {
+			wp_delete_attachment( $aid, true );
+		}
+		wp_delete_post( $pid, true );
+	}
+
+	/* 施工例のタグを data/works.json に合わせて張り直す */
+	foreach ( dcs_load_data( 'works' ) as $w ) {
+		$pid = dcs_find_post( $w['slug'], 'dc_work' );
+		if ( $pid ) {
+			wp_set_object_terms(
+				$pid,
+				dcs_ensure_terms( isset( $w['tags'] ) ? $w['tags'] : array(), 'dc_work_tag' ),
+				'dc_work_tag'
+			);
+		}
+	}
+
+	/* どの施工例にも使われなくなったタグを削除する */
+	$terms = get_terms(
+		array(
+			'taxonomy'   => 'dc_work_tag',
+			'hide_empty' => false,
+		)
+	);
+	if ( ! is_wp_error( $terms ) ) {
+		foreach ( $terms as $t ) {
+			if ( 0 === (int) $t->count ) {
+				wp_delete_term( $t->term_id, 'dc_work_tag' );
+			}
+		}
 	}
 
 	dcs_sync_term_slugs();
@@ -914,7 +981,7 @@ function dcs_work_blocks( $w, $ids ) {
 	}
 
 	$b[] = dcs_b_heading( 2, 'この家のような住まいを、宇都宮市で。' );
-	$b[] = dcs_b_paragraph( 'こちらは design casa 加盟工務店による施工実例です。同じ建築家ネットワークを使い、株式会社エスホームが宇都宮市・栃木県で設計・施工いたします。耐震等級3・断熱等級6を標準仕様としているため、デザインを損なわずに冬あたたかく夏すずしい家になります。' );
+	$b[] = dcs_b_paragraph( 'こちらは design casa 加盟工務店による施工実例です。同じ建築家ネットワークを使い、株式会社エスホームが宇都宮市・栃木県で設計・施工いたします。耐震等級3・断熱等級6以上を標準仕様としているため、デザインを損なわずに冬あたたかく夏すずしい家になります。' );
 	$b[] = dcs_b_button( 'この家について相談する（無料）', home_url( '/contact/' ) );
 
 	return dcs_b_join( $b );
@@ -984,7 +1051,7 @@ function dcs_import_architect( $a ) {
  *
  * @param array $s データ。
  */
-function dcs_import_spec( $s ) {
+function dcs_import_spec( $s, $order = 0 ) {
 	$post_id = dcs_find_post( $s['slug'], 'dc_spec' );
 
 	$args = array(
@@ -994,6 +1061,7 @@ function dcs_import_spec( $s ) {
 		'post_name'    => $s['slug'],
 		'post_excerpt' => $s['lead'],
 		'post_content' => dcs_markdown_to_blocks( $s['body'] ),
+		'menu_order'   => (int) $order,
 	);
 
 	if ( $post_id ) {

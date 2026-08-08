@@ -46,7 +46,7 @@ function dcs_meta_fields() {
 		'dc_spec'      => array(
 			'title' => '仕様データ',
 			'fields' => array(
-				'dcs_spec_grade'   => array( 'label' => '等級・数値', 'type' => 'text', 'help' => '例：耐震等級3／断熱等級6（UA値0.46以下）' ),
+				'dcs_spec_grade'   => array( 'label' => '等級・数値', 'type' => 'text', 'help' => '例：耐震等級3／断熱等級6以上' ),
 				'dcs_spec_maker'   => array( 'label' => '主な採用製品・メーカー', 'type' => 'textarea', 'help' => '1行につき1項目。' ),
 				'dcs_spec_lead'    => array( 'label' => 'リード文', 'type' => 'textarea' ),
 				'dcs_spec_gallery' => array( 'label' => '建材・製品の写真', 'type' => 'gallery', 'help' => '各写真の説明はメディアの「キャプション」に入力してください。' ),
