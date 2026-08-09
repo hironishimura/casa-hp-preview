@@ -105,22 +105,60 @@ function dcs_sync_term_slugs() {
 }
 
 /**
- * テーマ更新時の移行処理。
+ * 絞り込み（タクソノミー）のURL規則がデータベースに入っているか。
  *
- * 保存してあるバージョンが今のテーマより古ければ一度だけ実行します。
- * ZIPを入れ直すだけで直るようにするための仕組みです。
+ * 施工例の絞り込みタブ（/works/feature/…）と仕様カテゴリ（/spec/category/…）は、
+ * 投稿タイプのURLの下に入れ子になっているため、規則が失われると
+ * 「ページが見つかりませんでした」になります。CPT側のURLは生きたままなので
+ * 気づきにくく、実際に本番で発生しました。
+ *
+ * @return bool
  */
-function dcs_maybe_migrate() {
-	if ( get_option( 'dcs_migrated_version' ) === DCS_VERSION ) {
-		return;
+function dcs_taxonomy_rules_exist() {
+	$rules = get_option( 'rewrite_rules' );
+	if ( ! is_array( $rules ) || ! $rules ) {
+		return false;
 	}
 
-	dcs_sync_term_slugs();
-	flush_rewrite_rules();
+	foreach ( array_keys( $rules ) as $pattern ) {
+		if ( false !== strpos( $pattern, 'works/feature' ) ) {
+			return true;
+		}
+	}
 
+	return false;
+}
+
+/**
+ * テーマ更新時の移行処理と、URL規則の自動修復。
+ *
+ * 1. バージョンが変わったとき（ZIPを入れ替えたとき）に一度だけ実行
+ * 2. バージョンが同じでも、絞り込みのURL規則が失われていれば作り直す
+ *
+ * `admin_init` ではなく `init` に掛けているのは、管理画面を開かずに
+ * サイトを見ただけでも直るようにするためです。優先度99は、投稿タイプと
+ * タクソノミーの登録（優先度10）より後に走らせるため。
+ */
+function dcs_maybe_migrate() {
+	$version_changed = ( get_option( 'dcs_migrated_version' ) !== DCS_VERSION );
+
+	if ( ! $version_changed ) {
+		/* 規則が入っているなら何もしない。
+		   失われている場合も、1時間に1回までに抑えて作り直す。 */
+		if ( dcs_taxonomy_rules_exist() || get_transient( 'dcs_rules_checked' ) ) {
+			return;
+		}
+		set_transient( 'dcs_rules_checked', 1, HOUR_IN_SECONDS );
+	}
+
+	if ( $version_changed ) {
+		dcs_sync_term_slugs();
+	}
+
+	flush_rewrite_rules();
 	update_option( 'dcs_migrated_version', DCS_VERSION );
 }
-add_action( 'admin_init', 'dcs_maybe_migrate' );
+add_action( 'init', 'dcs_maybe_migrate', 99 );
 
 /**
  * パーマリンクを「投稿名」にする（SEOの基本）。

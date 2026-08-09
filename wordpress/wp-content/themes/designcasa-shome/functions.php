@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DCS_VERSION', '1.4.0' );
+define( 'DCS_VERSION', '1.4.1' );
 
 /**
  * 画像をテーマに同梱しない場合の取得元。
