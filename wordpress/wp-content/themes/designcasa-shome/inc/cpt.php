@@ -144,7 +144,46 @@ function dcs_register_taxonomies() {
 		)
 	);
 }
-add_action( 'init', 'dcs_register_taxonomies' );
+// 投稿タイプより先に登録する。後述の「横取り」対策のひとつ（WordPress の推奨順でもある）。
+add_action( 'init', 'dcs_register_taxonomies', 9 );
+
+/**
+ * 絞り込みURLの規則を最優先で登録する。
+ *
+ * 絞り込みURLは投稿タイプのスラッグの下に入れ子にしている（works/feature/... と
+ * spec/category/...）。ところが WordPress は投稿タイプを登録すると
+ *
+ *     works/[^/]+/([^/]+)/?$  →  attachment=$1
+ *
+ * という「添付ファイル用」の規則を自動で作る。これが works/feature/hiraya に
+ * 先に一致してしまい、「hiraya という名前の添付ファイル」を探しに行って
+ * 見つからず 404 になる（v1.4.1 までの不具合の正体）。
+ *
+ * 登録順を入れ替えるだけでも直るが、順序に頼ると将来また壊れやすい。
+ * ここで 'top' 指定の規則を明示的に置き、確実に添付ファイル規則より前に出す。
+ */
+function dcs_taxonomy_rewrite_rules() {
+	$bases = array(
+		'works/feature' => 'dc_work_tag',
+		'spec/category' => 'dc_spec_cat',
+	);
+
+	foreach ( $bases as $base => $taxonomy ) {
+		// ページ送りを先に登録する。'top' の規則は登録順に並ぶため、
+		// より限定的なこちらを先に置かないと下の汎用規則に飲み込まれる。
+		add_rewrite_rule(
+			'^' . $base . '/([^/]+)/page/?([0-9]{1,})/?$',
+			'index.php?' . $taxonomy . '=$matches[1]&paged=$matches[2]',
+			'top'
+		);
+		add_rewrite_rule(
+			'^' . $base . '/([^/]+)/?$',
+			'index.php?' . $taxonomy . '=$matches[1]',
+			'top'
+		);
+	}
+}
+add_action( 'init', 'dcs_taxonomy_rewrite_rules', 20 );
 
 /**
  * アーカイブの表示件数と並び順。
