@@ -106,7 +106,30 @@ function dcs_render_path( $path ) {
 		}
 	} elseif ( 'spec' === $seg[0] ) {
 
-		if ( 1 === count( $seg ) ) {
+		if ( count( $seg ) >= 3 && 'category' === $seg[1] ) {
+			$term = null;
+			foreach ( $GLOBALS['dcs_terms']['dc_spec_cat'] as $t ) {
+				if ( $t->slug === $seg[2] || $t->name === $seg[2] ) { $term = $t; }
+			}
+			if ( $term ) {
+				$GLOBALS['dcs_ctx'] = array(
+					'type'     => 'tax',
+					'taxonomy' => 'dc_spec_cat',
+					'object'   => $term,
+					'base'     => home_url( '/spec/category/' . $term->slug . '/' ),
+				);
+				dcs_set_main(
+					dcs_pv_query(
+						array(
+							'post_type'      => 'dc_spec',
+							'posts_per_page' => -1,
+							'tax_query'      => array( array( 'terms' => array( $term->term_id ) ) ),
+						)
+					)
+				);
+				$tpl = 'taxonomy-dc_spec_cat.php';
+			}
+		} elseif ( 1 === count( $seg ) ) {
 			$GLOBALS['dcs_ctx'] = array( 'type' => 'archive', 'post_type' => 'dc_spec', 'base' => home_url( '/spec/' ) );
 			dcs_set_main( dcs_pv_query( array( 'post_type' => 'dc_spec', 'posts_per_page' => -1 ) ) );
 			$tpl = 'archive-dc_spec.php';

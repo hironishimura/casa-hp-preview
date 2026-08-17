@@ -71,10 +71,15 @@ function dcs_seo_context() {
 	} elseif ( is_post_type_archive( 'dc_spec' ) ) {
 		$title = '家の仕様一覧｜耐震等級3・断熱等級6以上が標準｜宇都宮の高気密高断熱住宅';
 		$desc  = '宇都宮市の工務店エスホームの標準仕様。地震に強い家をつくる耐震等級3、断熱等級6以上の高断熱・高気密、エアコン1台で家中を快適にする全館空調まで、構造・断熱・空調・建材の仕様をすべて公開しています。';
-	} elseif ( is_tax( 'dc_work_tag' ) || is_tax( 'dc_spec_cat' ) ) {
+	} elseif ( is_tax( 'dc_work_tag' ) ) {
 		$term  = get_queried_object();
 		$title = sprintf( '%sの施工例｜宇都宮市・栃木県の注文住宅｜design casa × エスホーム', $term->name );
 		$desc  = $term->description ? dcs_trim_desc( $term->description ) : sprintf( '宇都宮市・栃木県で建てた「%s」の注文住宅事例をまとめました。建築家とつくるデザイン住宅を、耐震等級3・断熱等級6以上の標準仕様で。', $term->name );
+	} elseif ( is_tax( 'dc_spec_cat' ) ) {
+		// 仕様カテゴリは「施工例」ではないので、別の文面にする.
+		$term  = get_queried_object();
+		$title = sprintf( '%sの仕様｜宇都宮の高気密高断熱住宅｜design casa × エスホーム', $term->name );
+		$desc  = $term->description ? dcs_trim_desc( $term->description ) : sprintf( '宇都宮市の工務店エスホームの標準仕様のうち「%s」に関する内容をまとめました。耐震等級3・断熱等級6以上を標準とした家づくりの中身を公開しています。', $term->name );
 	} elseif ( is_search() ) {
 		$title  = sprintf( '「%s」の検索結果｜%s', get_search_query(), $site );
 		$robots = 'noindex, follow';
