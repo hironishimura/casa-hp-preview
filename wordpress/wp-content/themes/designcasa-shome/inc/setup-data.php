@@ -120,13 +120,29 @@ function dcs_taxonomy_rules_exist() {
 		return false;
 	}
 
-	foreach ( array_keys( $rules ) as $pattern ) {
-		if ( false !== strpos( $pattern, 'works/feature' ) ) {
-			return true;
+	$patterns = array_keys( $rules );
+
+	// 絞り込み用の規則そのものがあるか。
+	$mine = array_search( '^works/feature/([^/]+)/?$', $patterns, true );
+	if ( false === $mine ) {
+		return false;
+	}
+
+	/*
+	 * 「規則がある」だけでは不十分。施工例（CPT）の添付ファイル用規則
+	 * works/[^/]+/([^/]+)/?$ が先にあると、そちらに横取りされて 404 になる。
+	 * v1.4.1 まではここを見ておらず、壊れていても「正常」と誤判定していた。
+	 */
+	foreach ( $patterns as $i => $pattern ) {
+		if ( $i >= $mine ) {
+			break;
+		}
+		if ( 0 === strpos( $pattern, 'works/[^/]+/' ) ) {
+			return false; // 横取りされている.
 		}
 	}
 
-	return false;
+	return true;
 }
 
 /**

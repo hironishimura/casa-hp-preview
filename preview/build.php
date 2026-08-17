@@ -88,6 +88,9 @@ $paths[] = '/spec/';
 foreach ( dcs_pv_query( array( 'post_type' => 'dc_spec', 'posts_per_page' => -1 ) ) as $s ) {
 	$paths[] = '/spec/' . $s->post_name . '/';
 }
+foreach ( $GLOBALS['dcs_terms']['dc_spec_cat'] as $t ) {
+	$paths[] = '/spec/category/' . $t->slug . '/';
+}
 
 /* =========================================================
    書き出し
