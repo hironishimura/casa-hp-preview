@@ -4,7 +4,7 @@ Theme URI: https://designcasa.with-casa.com/
 Author: 株式会社エスホーム
 Author URI: https://shome.co.jp/
 Description: 建築家とつくる注文住宅ブランド design casa の加盟工務店・株式会社エスホーム（栃木県宇都宮市）の公式テーマ。施工例・建築家・家の仕様のカスタム投稿タイプ、SEO（タイトル／メタ／OGP／構造化データ）、資料請求フォームを内蔵しています。FTPでアップロードして有効化するだけで使えます。
-Version: 1.4.3
+Version: 1.4.4
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -901,7 +901,7 @@ address{ font-style:normal; }
    数値でみる仕様
    ========================================================= */
 .sec--figures{ background:var(--ink); color:var(--text-inv); }
-.figures{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:rgba(232,234,227,.18);
+.figures{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1px; background:rgba(232,234,227,.18);
   border:1px solid rgba(232,234,227,.18); list-style:none; margin:0; padding:0; }
 .figures__item{ background:var(--ink); padding:34px 26px 30px; }
 .figures__num{
