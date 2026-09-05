@@ -303,6 +303,7 @@ Actions のページ →「Instagram 自動投稿」→ 右上「…」→ **Dis
 |---|---|
 | メールで実行失敗の通知が来た | Actions のログを開くと日本語で理由が出ます |
 | 「アクセストークンが無効か期限切れです」 | STEP 3 をやり直し、`IG_ACCESS_TOKEN` を更新 |
+| トークン延長が `Session key invalid` で失敗 | **取得から24時間以内は延長できない仕様**。翌日以降なら通る |
 | 何も投稿されない・起動しない | Actions が Disable になっていないか確認 |
 | 同じ家が二度投稿された | `scripts/instagram/posted.json` に記録が残っているか確認 |
 | 写真が切れて表示される | その写真を `skip_photos.json` に追加 |
