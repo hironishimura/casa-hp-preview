@@ -2,9 +2,14 @@ name: Instagram 自動投稿
 
 on:
   schedule:
-    # 火曜と金曜の 10:00（日本時間）。UTC では 01:00。
+    # いずれも 10:00（日本時間）＝ UTC 01:00。
     # GitHub 側の都合で数分〜数十分ずれることがあります。
-    - cron: '0 1 * * 2,5'
+    #
+    # 2026-11-05 までは「1日おき」、以降は「週2回（火・金）」で運用します。
+    # cron 自体は両方を登録しておき、実際に投稿するかは
+    # 下の「今日が投稿日か判定する」ステップで切り替えます。
+    - cron: '0 1 */2 * *'   # 1日おき（奇数日）
+    - cron: '0 1 * * 2,5'   # 火・金
   workflow_dispatch:
     inputs:
       mode:
@@ -38,7 +43,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 今日が投稿日か判定する
+        id: gate
+        if: github.event_name == 'schedule'
+        run: |
+          # 開設直後はストックを厚くするため頻度を上げ、
+          # 落ち着いたら週2回に戻す。切替日はここだけ直せばよい。
+          SWITCH='2026-11-05'
+          TODAY=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          DAY=$(TZ=Asia/Tokyo date +%d)
+          DOW=$(TZ=Asia/Tokyo date +%u)   # 1=月 … 7=日
+
+          if [[ "$TODAY" < "$SWITCH" ]]; then
+            if [ $((10#$DAY % 2)) -eq 1 ]; then
+              echo "1日おき期間（$SWITCH まで）の投稿日です。"
+            else
+              echo 'skip=true' >> "$GITHUB_OUTPUT"
+              echo "偶数日のためスキップします。"
+            fi
+          else
+            case "$DOW" in
+              2|5) echo "週2回（火・金）の投稿日です。" ;;
+              *)   echo 'skip=true' >> "$GITHUB_OUTPUT"
+                   echo "火・金ではないためスキップします。" ;;
+            esac
+          fi
+
       - name: 投稿する
+        if: steps.gate.outputs.skip != 'true'
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
@@ -63,7 +95,7 @@ jobs:
           done
 
       - name: 投稿履歴を記録する
-        if: inputs.mode == 'post' || inputs.mode == ''
+        if: (inputs.mode == 'post' || inputs.mode == '') && steps.gate.outputs.skip != 'true'
         run: |
           if git diff --quiet scripts/instagram/posted.json; then
             echo "履歴に変化がないためコミットしません。"
