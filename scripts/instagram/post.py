@@ -152,7 +152,7 @@ def build_caption(work, photos, settings, part=1, parts=1):
     tag_line = " ".join("#" + t for t in tags[: settings["ハッシュタグの上限"]])
 
     url = settings["施工例ページのベースURL"].rstrip("/") + "/" + work["slug"] + "/"
-    footer = ["", f"▸ 間取りと写真の全点はこちら", url, ""] + settings["署名"] + ["", tag_line]
+    footer = ["", "▸ 写真の全点はこちら", url, ""] + settings["署名"] + ["", tag_line]
 
     limit = settings["キャプションの上限文字数"]
     details = [f"{i}｜{p['caption']}" for i, p in enumerate(photos, 1)]
