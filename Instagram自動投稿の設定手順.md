@@ -41,12 +41,20 @@ design casa の全国の建築実例より
 
 ---
 
-## 投稿先アカウント
+## 投稿先アカウントと Meta アプリ
 
-**@d_casa_u**（design casa 宇都宮）
+- Instagram：**@d_casa_u**（design casa 宇都宮）
+- Meta アプリ：**d-casaインスタ自動投稿**（アプリID `4529601620646485`／ビジネス：エスホーム）
 
-> 紛らわしいので注意：この `d_casa_u` は**ユーザー名**です。
-> STEP 4 で登録する `IG_USER_ID` は、これとは別の**数字だけのID**（17桁前後）です。
+| 行き先 | URL |
+|---|---|
+| ダッシュボード | https://developers.facebook.com/apps/4529601620646485/dashboard/ |
+| ユースケースのカスタマイズ | https://developers.facebook.com/apps/4529601620646485/use_cases/customize/ |
+| テスター招待の承認（Instagram側） | https://www.instagram.com/accounts/manage_access/ |
+
+> 管理画面には Instagram ユーザーID `17841441355355354` も表示されますが、
+> **登録は不要**です。API が返すIDとは体系が違い一致しないため、
+> スクリプトは `me`（トークンの持ち主自身）を使う設計にしています。
 
 ## STEP 1　Instagram をプロアカウントにする（お客さま作業・5分）
 
@@ -105,12 +113,71 @@ APIで投稿するには**プロアカウント**である必要があります�
 
 ### 3-4　トークンを生成する
 
-「Instagramログインによる API設定」に戻り、
-「2. アクセストークンを生成する」の **「アカウントを追加」** を押します。
+> ⚠️ 「2. アクセストークンを生成する」の **「トークンを生成」ボタンは動作しません**。
+> ポップアップが認可画面まで進まず、instagram.com に飛ばされます（2026-09-05 時点）。
+> 以下の手順で直接取得してください。
 
-- @d_casa_u でログイン・許可
-- 表示された **アクセストークン**（長い文字列・60日間有効）を控える
-- 同じ画面の **Instagram ユーザーID**（数字だけ）も控える
+**(1) 認可してコードを得る**
+
+ブラウザで次のURLを開き、**「許可」** を押します。
+
+```
+https://www.instagram.com/oauth/authorize?client_id=1374089647683781&redirect_uri=https%3A%2F%2Fhironishimura.github.io%2Fcasa-hp-preview%2F&scope=instagram_business_basic%2Cinstagram_business_content_publish&response_type=code
+```
+
+サイトにリダイレクトされ、アドレスバーが `...?code=XXXXX#_` になります。
+この **`code=` から `#_` の手前まで**が認証コードです（1時間で失効・1回限り）。
+
+**(2) app secret を控える**
+
+「InstagramログインによるAPI設定」画面の最上部、`Instagram app secret` の
+**「表示」** を押して32桁の文字列をコピーします。
+
+> ⚠️ 「アプリの設定 → ベーシック」にある app secret とは**別物**です。
+> `client_id` に Instagram アプリID を使うので、Instagram app secret でなければ通りません。
+
+**(3) 短期トークンに交換**
+
+```bash
+IG_SECRET='32桁のapp secret'; echo "文字数: ${#IG_SECRET}"
+```
+
+32 と出ることを確認してから、
+
+```bash
+curl -s -X POST https://api.instagram.com/oauth/access_token \
+  -F client_id=1374089647683781 -F client_secret="$IG_SECRET" \
+  -F grant_type=authorization_code \
+  -F redirect_uri=https://hironishimura.github.io/casa-hp-preview/ \
+  -F code='(1)のコード'
+```
+
+**(4) 60日トークンに交換**
+
+```bash
+curl -s -G https://graph.instagram.com/access_token \
+  -d grant_type=ig_exchange_token -d client_secret="$IG_SECRET" \
+  -d access_token='(3)の短期トークン'
+```
+
+`expires_in` が約 5183944（60日）で返る `access_token` が最終的な値です。
+
+**(5) 動作確認**
+
+```bash
+curl -s "https://graph.instagram.com/v23.0/me?fields=id,username&access_token=(4)のトークン"
+```
+
+`username` が `d_casa_u` なら成功です。
+（`id` は管理画面の番号と一致しませんが、正常です）
+
+**(6) 後始末**
+
+```bash
+unset IG_SECRET
+```
+
+app secret がシェル履歴に残るので、`~/.zsh_history` からも消しておいてください。
 
 ### 触らなくてよい項目
 
@@ -130,8 +197,11 @@ https://github.com/hironishimura/casa-hp-preview/settings/secrets/actions
 
 | 名前 | 中身 |
 |---|---|
-| `IG_ACCESS_TOKEN` | STEP 3 のアクセストークン |
-| `IG_USER_ID` | STEP 3 のInstagramユーザーID |
+| `IG_ACCESS_TOKEN` | STEP 3 で取得した60日トークン |
+
+> `IG_USER_ID` は**不要**です。スクリプトは `me`（トークンの持ち主自身）を使います。
+> Instagram には体系の違うIDが2つあり、Metaの管理画面に出ている番号と
+> APIが返す番号が一致しないため、取り違えを避ける設計にしています。
 
 ### あわせて登録を推奨：`GH_PAT`
 

@@ -195,9 +195,13 @@ def main():
         return
 
     token = os.environ.get("IG_ACCESS_TOKEN")
-    ig_user_id = os.environ.get("IG_USER_ID")
-    if not token or not ig_user_id:
-        sys.exit("環境変数 IG_ACCESS_TOKEN と IG_USER_ID が設定されていません。")
+    if not token:
+        sys.exit("環境変数 IG_ACCESS_TOKEN が設定されていません。")
+
+    # Instagram には体系の違うIDが2つあり、Metaの管理画面に出ている番号と
+    # APIが返す番号は一致しない。"me" はトークンの持ち主自身を指すので、
+    # IDを取り違える余地がなくなる。IG_USER_ID を設定した場合はそちらを使う。
+    ig_user_id = os.environ.get("IG_USER_ID") or "me"
 
     creation_id = create_carousel(ig_user_id, token, photos, caption, settings["画像のベースURL"])
     print("Instagram 側の処理を待っています…")
