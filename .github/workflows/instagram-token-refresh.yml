@@ -1,0 +1,33 @@
+name: Instagram トークン延長
+
+# 長期トークンは60日で切れます。週1回延長して期限を先送りし続けます。
+# GH_PAT が未設定の場合は延長のみ行い、Secrets の更新は手作業になります。
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'   # 毎週月曜 09:00（日本時間）
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: トークンを延長する
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: python3 scripts/instagram/refresh_token.py --out "$RUNNER_TEMP/ig_token.txt"
+
+      - name: 新しいトークンを Secrets に保存する
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_PAT が未設定のため Secrets を自動更新できません。"
+            echo "::warning::60日以内に手作業でトークンを取り直してください。"
+            exit 0
+          fi
+          gh secret set IG_ACCESS_TOKEN --repo "$GITHUB_REPOSITORY" < "$RUNNER_TEMP/ig_token.txt"
+          rm -f "$RUNNER_TEMP/ig_token.txt"
+          echo "Secrets の IG_ACCESS_TOKEN を更新しました。"

@@ -1,0 +1,65 @@
+name: Instagram 自動投稿
+
+on:
+  schedule:
+    # 火曜と金曜の 10:00（日本時間）。UTC では 01:00。
+    # GitHub 側の都合で数分〜数十分ずれることがあります。
+    - cron: '0 1 * * 2,5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '実行モード'
+        type: choice
+        default: 'check'
+        options:
+          - check
+          - dry-run
+          - post
+      slug:
+        description: '施工例を指定して投稿する（空なら次の未投稿）'
+        type: string
+        default: ''
+
+# 実行が重なって同じ施工例を二重投稿しないようにする
+concurrency:
+  group: instagram-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # posted.json を書き戻すため
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 投稿する
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          MODE: ${{ inputs.mode }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          # 定時実行（inputs なし）は本番投稿。手動実行は既定で check。
+          ARGS=()
+          case "${MODE:-post}" in
+            check)   ARGS+=(--check) ;;
+            dry-run) ARGS+=(--dry-run) ;;
+          esac
+          if [ -n "$SLUG" ]; then ARGS+=(--slug "$SLUG"); fi
+          python3 scripts/instagram/post.py "${ARGS[@]}"
+
+      - name: 投稿履歴を記録する
+        if: inputs.mode == 'post' || inputs.mode == ''
+        run: |
+          if git diff --quiet scripts/instagram/posted.json; then
+            echo "履歴に変化がないためコミットしません。"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/instagram/posted.json
+          git commit -m "記録: Instagram へ投稿した施工例"
+          git pull --rebase --autostash
+          git push
