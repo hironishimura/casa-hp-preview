@@ -26,3 +26,7 @@ casa_HP_data/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Python の実行時キャッシュ
+__pycache__/
+*.pyc
