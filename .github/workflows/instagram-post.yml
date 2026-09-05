@@ -7,10 +7,14 @@ on:
     - cron: '0 1 * * 2,5'
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: '投稿せず内容だけ確認する'
-        type: boolean
-        default: true
+      mode:
+        description: '実行モード'
+        type: choice
+        default: 'check'
+        options:
+          - check
+          - dry-run
+          - post
       slug:
         description: '施工例を指定して投稿する（空なら次の未投稿）'
         type: string
@@ -34,16 +38,20 @@ jobs:
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          MODE: ${{ inputs.mode }}
           SLUG: ${{ inputs.slug }}
         run: |
+          # 定時実行（inputs なし）は本番投稿。手動実行は既定で check。
           ARGS=()
-          if [ "$DRY_RUN" = "true" ]; then ARGS+=(--dry-run); fi
+          case "${MODE:-post}" in
+            check)   ARGS+=(--check) ;;
+            dry-run) ARGS+=(--dry-run) ;;
+          esac
           if [ -n "$SLUG" ]; then ARGS+=(--slug "$SLUG"); fi
           python3 scripts/instagram/post.py "${ARGS[@]}"
 
       - name: 投稿履歴を記録する
-        if: inputs.dry_run != true
+        if: inputs.mode == 'post' || inputs.mode == ''
         run: |
           if git diff --quiet scripts/instagram/posted.json; then
             echo "履歴に変化がないためコミットしません。"

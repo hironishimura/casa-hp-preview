@@ -217,10 +217,21 @@ https://github.com/hironishimura/casa-hp-preview/settings/secrets/actions
 
 ## STEP 5　テスト投稿で確認する
 
-1. https://github.com/hironishimura/casa-hp-preview/actions
-2. 左の「Instagram 自動投稿」→「Run workflow」
-3. **まず `投稿せず内容だけ確認する` を ✔ のまま実行**し、本文が意図どおりか見る
-4. 問題なければ、チェックを外してもう一度実行 → 実際に投稿されます
+https://github.com/hironishimura/casa-hp-preview/actions
+→ 左の「Instagram 自動投稿」→「Run workflow」
+
+**実行モード**を3段階で選べます。**この順に確認**してください。
+
+| モード | 何をするか |
+|---|---|
+| `check` | トークンの有効性と**投稿先アカウント名**を表示（投稿しない） |
+| `dry-run` | 次に投稿される施工例と**本文**を表示（投稿しない） |
+| `post` | **実際に投稿する** |
+
+`check` で `@d_casa_u` と出ることを必ず確認してから先へ進んでください。
+別のアカウント名が出た場合は、トークンを取り直しです。
+
+> 定時実行（火・金 10:00）は常に `post` で動きます。
 
 ---
 

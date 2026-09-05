@@ -167,9 +167,23 @@ def wait_ready(container_id, token, timeout=300):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true",
+                    help="トークンの有効性と投稿先アカウントを確認する（投稿しない）")
     ap.add_argument("--dry-run", action="store_true", help="投稿せず、選ばれた施工例と本文を表示する")
     ap.add_argument("--slug", help="施工例を指定して投稿する（テスト用）")
     args = ap.parse_args()
+
+    if args.check:
+        token = os.environ.get("IG_ACCESS_TOKEN")
+        if not token:
+            sys.exit("環境変数 IG_ACCESS_TOKEN が設定されていません。")
+        ig_user_id = os.environ.get("IG_USER_ID") or "me"
+        me = api("GET", ig_user_id, {"fields": "user_id,username,account_type"}, token)
+        print("トークンは有効です。")
+        print(f"  投稿先アカウント: @{me.get('username')}")
+        print(f"  アカウント種別  : {me.get('account_type', '(不明)')}")
+        print("\n意図したアカウントか必ず確認してください。")
+        return
 
     settings = load_json(SETTINGS_JSON)
     works = load_json(WORKS_JSON)
