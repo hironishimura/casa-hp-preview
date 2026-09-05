@@ -19,6 +19,10 @@ on:
         description: '施工例を指定して投稿する（空なら次の未投稿）'
         type: string
         default: ''
+      count:
+        description: '連続で投稿する件数（postのときだけ有効・初期のストック作り用）'
+        type: string
+        default: '1'
 
 # 実行が重なって同じ施工例を二重投稿しないようにする
 concurrency:
@@ -40,15 +44,23 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           MODE: ${{ inputs.mode }}
           SLUG: ${{ inputs.slug }}
+          COUNT: ${{ inputs.count }}
         run: |
           # 定時実行（inputs なし）は本番投稿。手動実行は既定で check。
           ARGS=()
+          COUNT="${COUNT:-1}"
           case "${MODE:-post}" in
-            check)   ARGS+=(--check) ;;
-            dry-run) ARGS+=(--dry-run) ;;
+            check)   ARGS+=(--check); COUNT=1 ;;
+            dry-run) ARGS+=(--dry-run); COUNT=1 ;;
           esac
           if [ -n "$SLUG" ]; then ARGS+=(--slug "$SLUG"); fi
-          python3 scripts/instagram/post.py "${ARGS[@]}"
+
+          for i in $(seq 1 "$COUNT"); do
+            if [ "$COUNT" -gt 1 ]; then echo "===== $i / $COUNT 件目 ====="; fi
+            python3 scripts/instagram/post.py "${ARGS[@]}"
+            # 短時間に連続投稿するとスパムとみなされうるので間隔を空ける
+            if [ "$i" -lt "$COUNT" ]; then echo "(3分待機)"; sleep 180; fi
+          done
 
       - name: 投稿履歴を記録する
         if: inputs.mode == 'post' || inputs.mode == ''

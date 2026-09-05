@@ -74,28 +74,29 @@ def api(method, path, params, token):
         raise ApiError(f"Instagram API エラー (code={code}): {msg}") from None
 
 
-def pick_work(works, posted, settings, only_slug=None):
-    """次に投稿する施工例と、それが何周目かを返す。"""
+def pick_post(queue, posted, settings, only_slug=None):
+    """次に投稿する1件を (施工例, 何回目, 全何回, 写真, 周回) で返す。"""
     if only_slug:
-        for w in works:
-            if w["slug"] == only_slug:
-                return w, posted.get("cycle", 1)
+        for item in queue:
+            if item[0]["slug"] == only_slug:
+                return (*item, posted.get("cycle", 1))
         sys.exit(f"施工例が見つかりません: {only_slug}")
 
     cycle = posted.get("cycle", 1)
-    done = {p["slug"] for p in posted.get("posted", []) if p.get("cycle", 1) == cycle}
+    done = {(p["slug"], p.get("part", 1))
+            for p in posted.get("posted", []) if p.get("cycle", 1) == cycle}
 
-    remaining = [w for w in works if w["slug"] not in done]
+    remaining = [it for it in queue if (it[0]["slug"], it[1]) not in done]
     if not remaining:
         # 一巡したので次の周に進める。過去の記録は履歴として残す。
         cycle += 1
-        remaining = list(works)
-        print(f"すべての施工例を投稿し終えたため、{cycle}周目に入ります。")
+        remaining = list(queue)
+        print(f"すべて投稿し終えたため、{cycle}周目に入ります。")
 
     if settings.get("投稿順") == "random":
         import random
-        return random.choice(remaining), cycle
-    return remaining[0], cycle
+        return (*random.choice(remaining), cycle)
+    return (*remaining[0], cycle)
 
 
 def photos_for(work, skip):
@@ -103,9 +104,40 @@ def photos_for(work, skip):
     return [g for g in work["gallery"] if g["file"] not in skip]
 
 
-def build_caption(work, photos, settings):
+def split_photos(photos, max_per_post):
+    """写真を複数の投稿に均等配分する。
+
+    5枚ずつ切り出すと端数だけの貧相な投稿ができてしまうため、
+    必要な投稿数を先に決めてから均等に割る（7枚なら 5+2 ではなく 4+3）。
+    """
+    if not photos:
+        return []
+    parts = -(-len(photos) // max_per_post)   # 切り上げ除算
+    base, extra = divmod(len(photos), parts)
+    out, i = [], 0
+    for k in range(parts):
+        size = base + (1 if k < extra else 0)
+        out.append(photos[i:i + size])
+        i += size
+    return out
+
+
+def build_queue(works, skip, settings):
+    """投稿の並びを (施工例, 何回目, 全何回, 写真) の一覧で返す。"""
+    queue = []
+    for w in works:
+        parts = split_photos(photos_for(w, skip), settings["1投稿あたりの最大枚数"])
+        for i, photos in enumerate(parts, 1):
+            queue.append((w, i, len(parts), photos))
+    return queue
+
+
+def build_caption(work, photos, settings, part=1, parts=1):
     """投稿本文を組み立てる。上限を超えたら写真の説明を後ろから削る。"""
-    lines = [f"{work['title']}｜{work['pref']}・{work['type']}"]
+    head = f"{work['title']}｜{work['pref']}・{work['type']}"
+    if parts > 1:
+        head += f"（{part}/{parts}）"
+    lines = [head]
     note = (settings.get("事例の注記") or "").strip()
     if note:
         # 栃木県外の実例のため、自社施工と誤解されないよう出典を添える
@@ -190,14 +222,14 @@ def main():
     skip = set(load_json(SKIP_JSON).get("skip", {}))
     posted = load_json(POSTED_JSON, {"posted": []})
 
-    work, cycle = pick_work(works, posted, settings, args.slug)
-    photos = photos_for(work, skip)[: settings["1投稿あたりの最大枚数"]]
+    queue = build_queue(works, skip, settings)
+    work, part, parts, photos, cycle = pick_post(queue, posted, settings, args.slug)
     if len(photos) < 2:
         sys.exit(f"{work['title']}: 使える写真が{len(photos)}枚しかなく、カルーセルを作れません。")
 
-    caption = build_caption(work, photos, settings)
+    caption = build_caption(work, photos, settings, part, parts)
 
-    print(f"施工例: {work['title']}（{work['slug']}）")
+    print(f"施工例: {work['title']}（{work['slug']}）{part}/{parts}回目")
     print(f"写真  : {len(photos)}枚 / ギャラリー{len(work['gallery'])}枚中")
     print(f"本文  : {len(caption)}文字")
     print("-" * 60)
@@ -236,6 +268,8 @@ def main():
     posted.setdefault("posted", []).append({
         "slug": work["slug"],
         "title": work["title"],
+        "part": part,
+        "parts": parts,
         "photos": len(photos),
         "cycle": cycle,
         "at": datetime.now(JST).isoformat(timespec="seconds"),

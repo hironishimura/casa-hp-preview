@@ -7,7 +7,20 @@
       "photos": 10,
       "cycle": 1,
       "at": "2026-09-05T11:32:43+09:00",
-      "permalink": "https://www.instagram.com/p/Dc45Xi2IO_u/"
+      "permalink": "https://www.instagram.com/p/Dc45Xi2IO_u/",
+      "part": 1,
+      "parts": 2
+    },
+    {
+      "slug": "madobe-wo-tanoshimu-ie",
+      "title": "窓辺を楽しむ家",
+      "photos": 0,
+      "cycle": 1,
+      "at": "2026-09-05T11:32:43+09:00",
+      "permalink": "https://www.instagram.com/p/Dc45Xi2IO_u/",
+      "part": 2,
+      "parts": 2,
+      "note": "初回は10枚まとめて投稿したため、2回目は消化済みとして記録"
     }
   ]
 }
