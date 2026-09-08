@@ -1,0 +1,63 @@
+name: 気象データの取り込み
+
+# Yahoo!天気とウェザーニュースは公開APIがなく、ブラウザから直接は読めません。
+# ここでページを取得して app/weather/data/latest.json に書き出し、
+# アプリ（/weather/）がそれを読む、という流れです。
+#
+# 気象庁の実況と予報はアプリが直接読むので、この取り込みが動いていなくても
+# アプリ自体は問題なく使えます。
+#
+# 定期実行は既定で止めてあります。動かすときは
+#   1. scripts/weather/settings.json の enabled を true にする
+#   2. 各社の利用規約を確認する
+#   3. 下の schedule のコメントを外す
+# の順で進めてください。
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: '書き出さずに中身だけ確認する'
+        type: boolean
+        default: false
+  # schedule:
+  #   - cron: '5 */3 * * *'   # 3時間おき
+
+concurrency:
+  group: weather-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # latest.json を書き戻すため
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 読み取り処理を確かめる
+        run: python3 scripts/weather/test_collect.py
+
+      - name: 取り込む
+        run: |
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            python3 scripts/weather/collect.py --dry-run
+          else
+            python3 scripts/weather/collect.py
+          fi
+
+      - name: 変わっていれば記録する
+        if: inputs.dry-run != true
+        run: |
+          FILES="app/weather/data/latest.json docs/weather/data/latest.json"
+          if [ -z "$(git status --porcelain -- $FILES)" ]; then
+            echo "内容に変化がないためコミットしません。"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $FILES
+          git commit -m "更新: 気温・湿度の取り込みデータ"
+          git pull --rebase --autostash
+          git push

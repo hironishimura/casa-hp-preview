@@ -45,15 +45,16 @@ function dcs_put( $out, $rel, $body ) {
 }
 
 /**
- * ディレクトリを再帰コピーする。
+ * ディレクトリを再帰コピーする。$skip に入れた名前は写さない。
  */
-function dcs_copy_dir( $src, $dst ) {
+function dcs_copy_dir( $src, $dst, $skip = array() ) {
 	if ( ! is_dir( $dst ) ) { mkdir( $dst, 0755, true ); }
 	foreach ( scandir( $src ) as $f ) {
 		if ( '.' === $f || '..' === $f || '.DS_Store' === $f ) { continue; }
+		if ( in_array( $f, $skip, true ) ) { continue; }
 		$s = $src . '/' . $f;
 		$d = $dst . '/' . $f;
-		is_dir( $s ) ? dcs_copy_dir( $s, $d ) : copy( $s, $d );
+		is_dir( $s ) ? dcs_copy_dir( $s, $d, $skip ) : copy( $s, $d );
 	}
 }
 
@@ -110,6 +111,13 @@ dcs_put( $out, '404.html', $r['html'] );
 /* テーマのアセット（CSS・JS・画像） */
 dcs_copy_dir( DCS_THEME_DIR . '/assets', $out . '/theme/assets' );
 copy( DCS_THEME_DIR . '/style.css', $out . '/theme/style.css' );
+
+/* 気温・湿度・絶対湿度アプリ（テーマとは独立した静的ファイル） */
+$weather_src = dirname( __DIR__ ) . '/app/weather';
+if ( is_dir( $weather_src ) ) {
+	dcs_copy_dir( $weather_src, $out . '/weather', array( 'test', 'README.md' ) );
+	echo "気温・湿度・絶対湿度アプリを /weather/ に書き出しました\n";
+}
 
 /* GitHub Pages 用 */
 dcs_put( $out, '.nojekyll', '' );
