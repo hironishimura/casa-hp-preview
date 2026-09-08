@@ -14,12 +14,28 @@ weather-app/
 │   ├── index.html
 │   ├── assets/        app.css / app.js
 │   └── data/          取り込みスクリプトが latest.json を置く場所
-├── scripts/           Yahoo!天気・ウェザーニュースの取り込み（任意）
+├── dist/              1ファイルにまとめた版（ダブルクリックで開けます）
+├── scripts/           取り込みと1ファイル化のスクリプト
 ├── test/              計算と読み取りの確認
 └── deploy/            定期実行用の GitHub Actions ワークフローの見本
 ```
 
 ## 開き方
+
+### いちばん手軽：1ファイル版
+
+`dist/weather-app.html` をダウンロードしてダブルクリックするだけです。
+サーバも置き場所も要りません。作り直すときは：
+
+```bash
+python3 weather-app/scripts/build_single.py
+```
+
+ただし `file://` で開くとブラウザの決まりで**現在地の取得が使えません**。
+画面の「地点を手で設定する」から緯度・経度を入れてください（既定は宇都宮）。
+Yahoo!天気とウェザーニュースの欄も「未取得」になります。
+
+### サーバを立てて開く（現在地が使えます）
 
 ```bash
 # 手元で開く（php でも python でも可）
