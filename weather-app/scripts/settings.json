@@ -1,10 +1,9 @@
 {
   "_について": "Yahoo!天気とウェザーニュースは公開APIがないため、ページを取得して読み取ります。使う前に必ず各社の利用規約をご確認ください。既定では両方とも enabled を false にしてあります。",
   "label": "栃木県宇都宮市",
-  "_outputs": "同じ内容をこれらの場所に書き出します。docs/ 側はGitHub Pagesのプレビュー用です。",
+  "_outputs": "書き出し先。weather-app/ からの相対パスで書きます。",
   "outputs": [
-    "app/weather/data/latest.json",
-    "docs/weather/data/latest.json"
+    "public/data/latest.json"
   ],
   "sources": {
     "yahoo": {

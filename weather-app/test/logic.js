@@ -4,7 +4,7 @@ const vm = require('vm');
 const path = require('path');
 
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'app.js'), 'utf8');
+const src = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'app.js'), 'utf8');
 
 const listeners = {};
 const doc = {

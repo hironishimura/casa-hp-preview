@@ -3,14 +3,14 @@
 
 どちらも公開APIがなく、ブラウザから直接読むことはできない（CORS）。
 そこでサーバ側（GitHub Actions など）でページを取得し、
-app/weather/data/latest.json に書き出しておく。
+public/data/latest.json に書き出しておく。
 アプリはそのファイルを読んで、気象庁の値と並べて表示する。
 
 外部ライブラリは使わない（GitHub Actions でそのまま動かすため）。
 
-    python3 scripts/weather/collect.py --dry-run          # 書き出さず中身だけ確認
-    python3 scripts/weather/collect.py                    # latest.json を書き出す
-    python3 scripts/weather/collect.py --html yahoo=a.html --dry-run
+    python3 weather-app/scripts/collect.py --dry-run       # 書き出さず中身だけ確認
+    python3 weather-app/scripts/collect.py                 # latest.json を書き出す
+    python3 weather-app/scripts/collect.py --html yahoo=a.html --dry-run
                                                           # 保存したページで読み取りを試す
 
 ページの作りが変わると読めなくなる。そのときは latest.json の
@@ -31,9 +31,9 @@ from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
+ROOT = os.path.dirname(HERE)          # weather-app/
 SETTINGS_JSON = os.path.join(HERE, "settings.json")
-DEFAULT_OUT = os.path.join(ROOT, "app/weather/data/latest.json")
+DEFAULT_OUT = os.path.join(ROOT, "public/data/latest.json")
 
 JST = timezone(timedelta(hours=9), "JST")
 USER_AGENT = (

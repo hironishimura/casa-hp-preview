@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'app.js'), 'utf8');
+const src = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'app.js'), 'utf8');
 const doc = {
   readyState: 'loading', addEventListener(){}, getElementById: () => null,
   querySelectorAll: () => [], createElement: () => ({ style:{}, appendChild(){} }),

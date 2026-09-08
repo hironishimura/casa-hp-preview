@@ -3,15 +3,36 @@
 現在地の気温・相対湿度・**絶対湿度**を実況と予報で表示するアプリです。
 ビルド不要の静的ファイル（HTML／CSS／JavaScript）だけでできています。
 
+design casa 宇都宮のサイトとは無関係の、独立した道具です。
+このフォルダ一式をそのまま別のリポジトリへ移してもそのまま動きます。
+
+## 中身
+
+```
+weather-app/
+├── public/            アプリ本体。この中だけを配信すれば動きます
+│   ├── index.html
+│   ├── assets/        app.css / app.js
+│   └── data/          取り込みスクリプトが latest.json を置く場所
+├── scripts/           Yahoo!天気・ウェザーニュースの取り込み（任意）
+├── test/              計算と読み取りの確認
+└── deploy/            定期実行用の GitHub Actions ワークフローの見本
+```
+
 ## 開き方
 
-| 場所 | URL |
-|---|---|
-| GitHub Pages のプレビュー | https://hironishimura.github.io/casa-hp-preview/weather/ |
-| 手元で確認 | `php -S 127.0.0.1:8080 -t app/weather` → http://127.0.0.1:8080/ |
+```bash
+# 手元で開く（php でも python でも可）
+php -S 127.0.0.1:8080 -t weather-app/public
+python3 -m http.server 8080 --directory weather-app/public
+```
+
+→ http://127.0.0.1:8080/
 
 現在地の取得（Geolocation）はブラウザの決まりで **https か localhost** でしか動きません。
 `file://` で直接開くと現在地が取れず、地点は手入力になります。
+
+どこかに公開する場合は `public/` の中身をそのまま置くだけです（サーバ側の処理は不要）。
 
 ## 表示するもの
 
@@ -21,6 +42,8 @@
 - 提供元ごとの値を並べた表
 - 時系列グラフ（実況の過去24時間／これからの予報）— 気温・相対湿度・絶対湿度の3段
 - 気象庁の日別予報（3日＋週間）と気象概況
+
+地点はブラウザに覚えさせるので、次に開いたときは同じ場所から始まります。
 
 ## データの出どころ
 
@@ -54,23 +77,25 @@ APIキーなしで、ブラウザから直接読める形（CORS対応）で提�
 ## Yahoo!天気・ウェザーニュースを使うには
 
 1. それぞれのサイトで自分の地域のページを開き、そのURLを控える
-2. `scripts/weather/settings.json` の `url` を書き換え、`enabled` を `true` にする
+2. `scripts/settings.json` の `url` を書き換え、`enabled` を `true` にする
 3. 利用規約を確認する
 4. 動かす
 
 ```bash
 # 書き出さずに読めるかどうかだけ試す
-python3 scripts/weather/collect.py --dry-run
+python3 weather-app/scripts/collect.py --dry-run
 
 # 保存したページで読み取りを試す
-python3 scripts/weather/collect.py --html yahoo=saved.html --dry-run
+python3 weather-app/scripts/collect.py --html yahoo=saved.html --dry-run
 
-# 本番（app/weather/data/latest.json と docs/weather/data/latest.json に書き出す）
-python3 scripts/weather/collect.py
+# 本番（weather-app/public/data/latest.json に書き出す）
+python3 weather-app/scripts/collect.py
 ```
 
-定期的に取り込むなら `.github/workflows/weather-collect.yml` の `schedule` の
-コメントを外してください（既定は3時間おき）。
+定期的に取り込むなら `deploy/weather-collect.yml` を
+リポジトリの `.github/workflows/` にコピーし、`schedule` のコメントを外してください
+（既定は3時間おき）。手元の cron から `collect.py` を叩くだけでも構いません。
+
 読めなかったときは `latest.json` に理由が残り、アプリの「取得状況」に**失敗**と出ます。
 
 ## 計算式
@@ -89,16 +114,11 @@ python3 scripts/weather/collect.py
 ## 確認
 
 ```bash
-node app/weather/test/run.js          # 計算・読み取り・予報JSONの解釈
-python3 scripts/weather/test_collect.py   # 取り込みスクリプトの読み取り処理
+node weather-app/test/run.js              # 計算・読み取り・予報JSONの解釈
+python3 weather-app/scripts/test_collect.py   # 取り込みスクリプトの読み取り処理
 ```
 
 ネットワークにはつながず、モックしたデータで確かめます。
-
-## 静的サイトへの書き出し
-
-`php preview/build.php https://hironishimura.github.io/casa-hp-preview docs` を実行すると、
-このフォルダが `docs/weather/` にコピーされます（`test/` と `README.md` は除く）。
 
 ## 注意
 
