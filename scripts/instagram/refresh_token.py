@@ -34,19 +34,18 @@ def main():
             data = json.loads(res.read().decode())
     except urllib.error.HTTPError as exc:
         body = exc.read().decode(errors="replace")
-        # 発行から24時間経っていないトークンは延長できない（Meta の仕様）。
-        # このとき "Session key invalid" という紛らわしい文言が返るため、
-        # 期限切れと区別できるように補足する。
-        if "Session key invalid" in body or "2207055" in body:
-            print(
-                "延長できませんでした。取得したばかりのトークンは、\n"
-                "発行から24時間経つまで延長できない仕様です（異常ではありません）。\n"
-                "翌日以降の実行で延長されます。"
+        # "Session key invalid" は短期トークン（1時間）を登録してしまった
+        # ときにも返る。かつて24時間制約と誤認して正常扱いにし、実際は
+        # 短期トークンのまま1週間止まっていたことがある。安易に握りつぶさない。
+        hint = ""
+        if "Session key invalid" in body:
+            hint = (
+                "  短期トークン（1時間）を登録している可能性が高いです。\n"
+                "  60日トークンに交換したうえで登録し直してください。\n"
             )
-            return
         sys.exit(
-            "トークンの延長に失敗しました。期限が切れている可能性があります。\n"
-            "  → 設定手順書の「トークンを取り直す」からやり直してください。\n"
+            "トークンの延長に失敗しました。\n" + hint +
+            "  → 設定手順書の STEP 3-4 からやり直してください。\n"
             f"  応答: {body[:300]}"
         )
 

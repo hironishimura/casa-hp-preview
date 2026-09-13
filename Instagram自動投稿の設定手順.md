@@ -149,42 +149,27 @@ https://www.instagram.com/oauth/authorize?client_id=1374089647683781&redirect_ur
 > ⚠️ 「アプリの設定 → ベーシック」にある app secret とは**別物**です。
 > `client_id` に Instagram アプリID を使うので、Instagram app secret でなければ通りません。
 
-**(3) 短期トークンに交換**
+**(3) 交換して登録する（1コマンド）**
+
+`ここにcode` と `ここにapp secret` の2箇所を置き換えて、ターミナルで実行します。
+短期トークン（1時間）→ 60日トークンの交換 → GitHub への登録まで一気に行い、
+**60日トークンでなければ登録しない**作りになっています。
 
 ```bash
-IG_SECRET='32桁のapp secret'; echo "文字数: ${#IG_SECRET}"
+CODE='ここにcode'; IG_SECRET='ここにapp secret'; echo "app secret: ${#IG_SECRET}文字（32ならOK）"; SHORT=$(curl -s -X POST https://api.instagram.com/oauth/access_token -F client_id=1374089647683781 -F client_secret="$IG_SECRET" -F grant_type=authorization_code -F redirect_uri=https://hironishimura.github.io/casa-hp-preview/ -F code="$CODE" | python3 -c 'import sys,json;d=json.load(sys.stdin);t=d.get("access_token") or (d.get("data") or [{}])[0].get("access_token");print(t or "")'); if [ -z "$SHORT" ]; then echo "❌ 短期トークンの取得に失敗（code か app secret を確認）"; else LONG=$(curl -s -G https://graph.instagram.com/access_token -d grant_type=ig_exchange_token -d client_secret="$IG_SECRET" -d access_token="$SHORT" | python3 -c 'import sys,json;d=json.load(sys.stdin);e=d.get("expires_in",0);print(d["access_token"] if e>86400*50 else "")'); if [ -z "$LONG" ]; then echo "❌ 60日トークンへの交換に失敗"; else printf '%s' "$LONG" | gh secret set IG_ACCESS_TOKEN --repo hironishimura/casa-hp-preview && echo "✅ 60日トークンを登録しました"; fi; fi; unset CODE IG_SECRET SHORT LONG
 ```
 
-32 と出ることを確認してから、
+**「✅ 60日トークンを登録しました」と出るまで完了ではありません。**
 
-```bash
-curl -s -X POST https://api.instagram.com/oauth/access_token \
-  -F client_id=1374089647683781 -F client_secret="$IG_SECRET" \
-  -F grant_type=authorization_code \
-  -F redirect_uri=https://hironishimura.github.io/casa-hp-preview/ \
-  -F code='(1)のコード'
-```
+> ⚠️ 2026-09-05 に、短期トークン（1時間）のまま登録して1週間止まった事故がありました。
+> 短期トークンでも投稿は一時的に成功するため、気づきにくいのが厄介です。
 
-**(4) 60日トークンに交換**
+**(4) 動作確認**
 
-```bash
-curl -s -G https://graph.instagram.com/access_token \
-  -d grant_type=ig_exchange_token -d client_secret="$IG_SECRET" \
-  -d access_token='(3)の短期トークン'
-```
+Actions →「Instagram 自動投稿」→ Run workflow → `mode: check`
+「投稿先アカウント: @d_casa_u」と出れば成功です。
 
-`expires_in` が約 5183944（60日）で返る `access_token` が最終的な値です。
-
-**(5) 動作確認**
-
-```bash
-curl -s "https://graph.instagram.com/v23.0/me?fields=id,username&access_token=(4)のトークン"
-```
-
-`username` が `d_casa_u` なら成功です。
-（`id` は管理画面の番号と一致しませんが、正常です）
-
-**(6) 後始末**
+**(5) 後始末**
 
 ```bash
 unset IG_SECRET
@@ -306,7 +291,8 @@ Actions のページ →「Instagram 自動投稿」→ 右上「…」→ **Dis
 |---|---|
 | メールで実行失敗の通知が来た | Actions のログを開くと日本語で理由が出ます |
 | 「アクセストークンが無効か期限切れです」 | STEP 3 をやり直し、`IG_ACCESS_TOKEN` を更新 |
-| トークン延長が `Session key invalid` で失敗 | **取得から24時間以内は延長できない仕様**。翌日以降なら通る |
+| トークン延長が `Session key invalid` で失敗 | **短期トークン（1時間）を登録している**。STEP 3-4 で60日トークンに取り直す |
+| 投稿日だけ失敗し、スキップ日は成功している | トークン切れ。同上 |
 | 何も投稿されない・起動しない | Actions が Disable になっていないか確認 |
 | 同じ家が二度投稿された | `scripts/instagram/posted.json` に記録が残っているか確認 |
 | 写真が切れて表示される | その写真を `skip_photos.json` に追加 |

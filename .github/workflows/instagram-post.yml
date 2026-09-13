@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # posted.json を書き戻すため
+      issues: write     # 失敗を Issue で知らせるため
 
     steps:
       - uses: actions/checkout@v4
@@ -108,3 +109,24 @@ jobs:
           git commit -m "記録: Instagram へ投稿した施工例"
           git pull --rebase --autostash
           git push
+
+      # メール通知だけだと見落として1週間止まったことがあるため、
+      # 失敗したらリポジトリに Issue を立てて目に付くようにする。
+      - name: 失敗を Issue で知らせる
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="Instagram 自動投稿が失敗しています"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M') の実行が失敗しました。
+          ログ: $RUN_URL
+
+          トークン切れなら「Instagram自動投稿の設定手順.md」の STEP 3-4 で取り直してください。
+          直ったらこの Issue を閉じてください。"
+          EXISTING=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
